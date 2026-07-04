@@ -5,7 +5,7 @@ from starlette import status
 
 
 class AppError(Exception):
-    """Base application exception carrying HTTP status and error code."""
+    """Main custom error type for API responses."""
 
     def __init__(self, message: str, status_code: int, code: str) -> None:
         super().__init__(message)
@@ -15,6 +15,7 @@ class AppError(Exception):
 
 
 class ConflictError(AppError):
+    # Use this when the request tries to create a duplicate resource.
     def __init__(self, message: str = "Resource already exists") -> None:
         super().__init__(
             message=message,
@@ -24,6 +25,7 @@ class ConflictError(AppError):
 
 
 class AuthenticationError(AppError):
+    # Use this when login/token checks fail.
     def __init__(self, message: str = "Invalid credentials") -> None:
         super().__init__(
             message=message,
@@ -33,6 +35,7 @@ class AuthenticationError(AppError):
 
 
 class NotFoundError(AppError):
+    # Use this when a requested object cannot be found.
     def __init__(self, message: str = "Resource not found") -> None:
         super().__init__(
             message=message,
@@ -42,6 +45,7 @@ class NotFoundError(AppError):
 
 
 def register_exception_handlers(app: FastAPI) -> None:
+    # Catch custom app errors and return one consistent JSON error format.
     @app.exception_handler(AppError)
     async def app_error_handler(_: Request, exc: AppError) -> JSONResponse:
         return JSONResponse(
@@ -56,7 +60,8 @@ def register_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(RequestValidationError)
     async def validation_error_handler(_: Request, exc: RequestValidationError) -> JSONResponse:
-        # Return a consistent payload shape so frontend error handling is predictable.
+        # FastAPI raises this when input data does not match the schema.
+        # We still return our own format so the frontend always sees the same shape.
         return JSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             content={
@@ -70,6 +75,8 @@ def register_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(Exception)
     async def unhandled_error_handler(_: Request, exc: Exception) -> JSONResponse:
+        # Backup handler for anything we did not catch above.
+        # In production, we would hide more details and log them server-side.
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={
