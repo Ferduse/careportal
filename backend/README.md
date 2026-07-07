@@ -94,9 +94,4 @@ You can test everything through Swagger UI at `http://127.0.0.1:8000/docs`.
   - Send invalid email format
   - Expected: 422 validation error response
 
-## Notes for Next Iteration
 
-- Replace in-memory auth store with MySQL/PostgreSQL persistence.
-- Add refresh tokens and logout/revocation strategy.
-- Add role-based authorization for patient/admin/doctor workflows.
-- Add integration tests for auth and error response contracts.
