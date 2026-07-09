@@ -1,32 +1,25 @@
 from fastapi import APIRouter, Depends
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from app.core.dependencies import get_current_user
 from app.core.errors import AuthenticationError
-from app.core.security import create_access_token, decode_access_token
-from app.schemas.auth import AuthTokenResponse, UserLoginRequest, UserPublic, UserRegisterRequest
+from app.core.security import (
+    create_access_token,
+    create_refresh_token,
+    decode_refresh_token,
+)
+from app.schemas.auth import (
+    AuthTokenResponse,
+    LogoutRequest,
+    MessageResponse,
+    RefreshTokenRequest,
+    UserLoginRequest,
+    UserPublic,
+    UserRegisterRequest,
+)
 from app.services.auth_service import UserRecord, auth_service
 
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
-# auto_error=False lets us return our own custom auth errors.
-security = HTTPBearer(auto_error=False)
-
-
-def get_current_user(
-    credentials: HTTPAuthorizationCredentials | None = Depends(security),
-) -> UserRecord:
-    # Read bearer token from Authorization header and resolve current user.
-    # We do custom handling so all auth errors match our API format.
-    if credentials is None:
-        raise AuthenticationError("Authorization token is missing")
-
-    try:
-        # Decode token and get user email from token subject.
-        email = decode_access_token(credentials.credentials)
-    except ValueError as exc:
-        raise AuthenticationError(str(exc)) from exc
-
-    return auth_service.get_user_by_email(email)
 
 
 @router.post("/register", response_model=UserPublic, status_code=201)
@@ -44,8 +37,34 @@ def register(payload: UserRegisterRequest) -> UserPublic:
 def login(payload: UserLoginRequest) -> AuthTokenResponse:
     # Validate login info and return JWT token.
     user = auth_service.authenticate_user(email=payload.email, password=payload.password)
-    token = create_access_token(user.email)
-    return AuthTokenResponse(access_token=token)
+    access_token = create_access_token(user.email)
+    refresh_token = create_refresh_token(user.email)
+    auth_service.add_refresh_token(refresh_token)
+    return AuthTokenResponse(access_token=access_token, refresh_token=refresh_token)
+
+
+@router.post("/refresh", response_model=AuthTokenResponse)
+def refresh_token(payload: RefreshTokenRequest) -> AuthTokenResponse:
+    if not auth_service.is_refresh_token_active(payload.refresh_token):
+        raise AuthenticationError("Refresh token is invalid or logged out")
+
+    try:
+        email = decode_refresh_token(payload.refresh_token)
+    except ValueError as exc:
+        raise AuthenticationError(str(exc)) from exc
+
+    # Rotate refresh token so old token cannot be reused.
+    auth_service.revoke_refresh_token(payload.refresh_token)
+    new_access_token = create_access_token(email)
+    new_refresh_token = create_refresh_token(email)
+    auth_service.add_refresh_token(new_refresh_token)
+    return AuthTokenResponse(access_token=new_access_token, refresh_token=new_refresh_token)
+
+
+@router.post("/logout", response_model=MessageResponse)
+def logout(payload: LogoutRequest) -> MessageResponse:
+    auth_service.revoke_refresh_token(payload.refresh_token)
+    return MessageResponse(message="Logged out")
 
 
 @router.get("/me", response_model=UserPublic)

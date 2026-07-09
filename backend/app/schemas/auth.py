@@ -17,7 +17,20 @@ class UserLoginRequest(BaseModel):
 class AuthTokenResponse(BaseModel):
     # Standard token response format used by many APIs.
     access_token: str
+    refresh_token: str
     token_type: str = "bearer"
+
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str = Field(min_length=10)
+
+
+class LogoutRequest(BaseModel):
+    refresh_token: str = Field(min_length=10)
+
+
+class MessageResponse(BaseModel):
+    message: str
 
 
 class UserPublic(BaseModel):

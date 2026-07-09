@@ -10,7 +10,8 @@ class Settings(BaseSettings):
     # JWT settings for login tokens.
     jwt_secret_key: str = "dev-secret-change-before-production"
     jwt_algorithm: str = "HS256"
-    access_token_expire_minutes: int = 60
+    access_token_expire_minutes: int = 30
+    refresh_token_expire_minutes: int = 1440
 
     # Load values from .env file using CAREPORTAL_ prefix.
     model_config = SettingsConfigDict(env_file=".env", env_prefix="CAREPORTAL_")

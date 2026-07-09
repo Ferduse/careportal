@@ -21,6 +21,8 @@ class AuthService:
         self._users_by_email: dict[str, UserRecord] = {}
         # Very basic id counter for demo users.
         self._next_id = 1
+        # In-memory allowlist for refresh tokens.
+        self._active_refresh_tokens: set[str] = set()
 
     def register_user(self, full_name: str, email: str, password: str) -> UserRecord:
         # Normalize email so uppercase/lowercase versions are treated the same.
@@ -54,6 +56,15 @@ class AuthService:
         if not user:
             raise NotFoundError("User not found")
         return user
+
+    def add_refresh_token(self, token: str) -> None:
+        self._active_refresh_tokens.add(token)
+
+    def is_refresh_token_active(self, token: str) -> bool:
+        return token in self._active_refresh_tokens
+
+    def revoke_refresh_token(self, token: str) -> None:
+        self._active_refresh_tokens.discard(token)
 
 
 # Shared singleton service for this scaffold app.
