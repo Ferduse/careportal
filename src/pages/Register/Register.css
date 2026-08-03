@@ -1,0 +1,35 @@
+/* Similar to Login css to keep consistency */
+
+.register-page {
+    display:flex;
+    justify-content:center;
+    align-items:center; 
+    background-color: #f4f7fb;;
+    height: 100vh;
+
+    
+  }
+  
+  .register-card {
+    background-color: white;
+    width: 350px;
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow:0 8px 20px rgba(0,0,0,.1);
+  }
+
+  .logo h2{
+    margin-top:10px;
+    }
+
+  .register-card p {
+    text-align:center;
+    margin-top:20px;
+  }
+
+  .Gender {
+    background-color: white;
+    width: 270px;
+    padding: 15px;
+    border-radius: 15px;
+  }

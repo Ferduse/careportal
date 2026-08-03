@@ -1,25 +1,53 @@
-import logo from './logo.svg';
-import './App.css';
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+
+import Login from "./pages/Login/Login";
+import Register from "./pages/Register/Register";
+import Dashboard from "./pages/Dashboard/Dashboard";
+import Appointment from "./pages/Appointment/Appointment";
+import MedicalHistory from "./pages/MedicalHistory/MedicalHistory";
+import Prediction from "./pages/Prediction/Prediction";
+
+
+
 
 function App() {
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+
+    <BrowserRouter>
+
+      <Routes>
+
+        {/* Authentication */}
+        <Route path="/" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+
+
+        {/* Patient Pages */}
+        <Route path="/dashboard" element={<Dashboard />} />
+
+        <Route path="/appointments" element={<Appointment />} />
+
+        <Route path="/medical-history" element={<MedicalHistory />} />
+
+        <Route path="/prediction" element={<Prediction /> } />
+
+
+        {/* Temporary Pages */}
+        <Route 
+          path="/profile" 
+          element={<h1>Profile Page</h1>} 
+        />
+
+
+      </Routes>
+
+    </BrowserRouter>
+
   );
+
 }
 
+
 export default App;
+

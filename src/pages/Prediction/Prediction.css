@@ -1,0 +1,133 @@
+* {
+    box-sizing: border-box;
+  }
+  
+  body {
+    margin: 0;
+    background: #f3f5f8;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+  
+  .prediction-container {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px 20px;
+  }
+  
+  .prediction-card {
+    width: 900px;
+    max-width: 100%;
+    background: white;
+    border-radius: 16px;
+    padding: 35px;
+    box-shadow: 0 12px 35px rgba(0,0,0,0.08);
+  }
+  
+  .prediction-card h2 {
+    text-align: center;
+    margin-bottom: 30px;
+    color: #222;
+  }
+  
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(2,1fr);
+    gap: 22px;
+  }
+  
+  .form-group {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .form-group label {
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #444;
+  }
+  
+  .form-group input,
+  .form-group select {
+    padding: 14px;
+    border: 1px solid #d6d6d6;
+    border-radius: 10px;
+    font-size: 16px;
+    outline: none;
+    transition: 0.25s;
+  }
+  
+  .form-group input:focus,
+  .form-group select:focus {
+    border-color: #4f8dfd;
+    box-shadow: 0 0 5px rgba(79,141,253,0.4);
+  }
+  
+  .predict-btn {
+    width: 100%;
+    margin-top: 35px;
+    padding: 16px;
+    border: none;
+    border-radius: 10px;
+    background: #4f8dfd;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+  
+  .predict-btn:hover {
+    background: #2f73f3;
+  }
+  
+  .result-card {
+    margin-top: 35px;
+    border: 1px solid #e5e5e5;
+    border-radius: 12px;
+    padding: 25px;
+    text-align: center;
+    background: #fafafa;
+  }
+  
+  .result-card h3 {
+    margin-bottom: 20px;
+  }
+  
+  .risk-badge {
+    display: inline-block;
+    padding: 12px 24px;
+    border-radius: 30px;
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+  }
+  
+  .risk-badge.low {
+    background: #28a745;
+  }
+  
+  .risk-badge.medium {
+    background: #f4b400;
+  }
+  
+  .risk-badge.high {
+    background: #dc3545;
+  }
+  
+  .disclaimer {
+    margin-top: 20px;
+    color: #666;
+    font-style: italic;
+  }
+  
+  @media (max-width: 768px) {
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
+  
+    .prediction-card {
+      padding: 25px;
+    }
+  }
