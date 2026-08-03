@@ -62,7 +62,7 @@ CREATE TABLE Predictions (
   prediction_id INT PRIMARY KEY AUTO_INCREMENT,
   patient_id INT,
   symptom_id INT,
-  risk_level ENUM('low', 'medium', 'high'),
+  diabetes INT,
   confidence DECIMAL(5,2),
   predicted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (patient_id) REFERENCES Patients(patient_id),
