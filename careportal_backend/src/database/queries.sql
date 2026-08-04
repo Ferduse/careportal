@@ -1,6 +1,6 @@
 -- ============================================
 -- HEALTHCARE APP - QUERY REFERENCE FILE
--- For Backend Integration (Student 4)
+-- For Backend Integration
 -- ============================================
 
 -- ============================================
@@ -19,6 +19,11 @@ WHERE email = ? AND password = ?;
 -- Get user by ID
 SELECT * FROM Users
 WHERE user_id = ?;
+
+
+
+
+
 
 -- ============================================
 -- PATIENT QUERIES
@@ -39,6 +44,12 @@ UPDATE Patients
 SET first_name = ?, last_name = ?, phone = ?, address = ?
 WHERE patient_id = ?;
 
+
+
+
+
+
+
 -- ============================================
 -- DOCTOR QUERIES
 -- ============================================
@@ -53,6 +64,11 @@ WHERE specialization = ?;
 -- Get doctor by ID
 SELECT * FROM Doctors
 WHERE doctor_id = ?;
+
+
+
+
+
 
 -- ============================================
 -- APPOINTMENT QUERIES
@@ -95,6 +111,12 @@ JOIN Patients p ON a.patient_id = p.patient_id
 WHERE a.doctor_id = ?
 ORDER BY a.appointment_date ASC;
 
+
+
+
+
+
+
 -- ============================================
 -- MEDICAL HISTORY QUERIES
 -- ============================================
@@ -125,6 +147,10 @@ WHERE patient_id = ?
 ORDER BY diagnosis_date DESC
 LIMIT 1;
 
+
+
+
+
 -- ============================================
 -- PREDICTION QUERIES
 -- ============================================
@@ -147,6 +173,12 @@ JOIN MedicalHistory mh ON pr.history_id = mh.history_id
 WHERE pr.patient_id = ?
 ORDER BY pr.predicted_date DESC
 LIMIT 1;
+
+
+
+
+
+
 
 -- ============================================
 -- DASHBOARD SUMMARY QUERY
