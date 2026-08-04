@@ -34,26 +34,39 @@
 
 ## Run Locally
 
-1. Create and activate a virtual environment.
-2. Install dependencies:
+1. Make sure Python 3.14 is installed:
+
+```bash
+python3 --version
+```
+
+2. Create and activate a virtual environment:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+```
+
+3. Install dependencies:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Copy environment template:
+4. Copy environment template:
 
 ```bash
 cp .env.example .env
 ```
 
-4. Start API server:
+5. Start API server:
 
 ```bash
 uvicorn app.main:app --reload
 ```
 
-5. Open docs at `http://127.0.0.1:8000/docs`
+6. Open docs at `http://127.0.0.1:8000/docs`
 
 ## Manual Testing (Local)
 
