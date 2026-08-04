@@ -38,15 +38,13 @@ CREATE TABLE Appointments (
   status ENUM('scheduled', 'completed', 'cancelled'),
   notes TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (patient_id) REFERENCES Patients(patient_id),
+  FOREIGN KEY (patient_id) REFERENCES Patients(patient_id)
   FOREIGN KEY (doctor_id) REFERENCES Doctors(doctor_id)
 );
 
 CREATE TABLE MedicalHistory (
   history_id INT PRIMARY KEY AUTO_INCREMENT,
   patient_id INT,
-  age        INT,
-  gender     ENUM('male', 'female', 'other'),
   hypertension TINYINT(1),
   heart_disease TINYINT(1),
   smoking_history VARCHAR(50),
@@ -59,7 +57,7 @@ CREATE TABLE MedicalHistory (
 );
 
 CREATE TABLE Predictions (
-  prediction_id INT PRIMARY KEY AUTO_INCREMENT,
+  history_id INT PRIMARY KEY AUTO_INCREMENT,
   patient_id INT,
   symptom_id INT,
   diabetes INT,
