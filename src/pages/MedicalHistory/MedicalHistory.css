@@ -1,148 +1,297 @@
-* {
+
+.medical-history-page {
+
+    min-height: 100vh;
+
+    background: #f8fafc;
+
+    padding: 30px 50px;
+
+}
+
+
+/* Header */
+
+.medical-history-header {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 20px;
+
+    margin-bottom: 30px;
+
+}
+
+
+.medical-history-header h2 {
+
+    flex: 1;
+
     margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
 
-body{
-    font-family: Arial, Helvetica, sans-serif;
-    background:#f4f5f7;
-}
-
-.page{
-    min-height:100vh;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    padding:30px;
-}
-
-.phone{
-
-    width:390px;
-    background:white;
-    border-radius:25px;
-    padding:22px;
-    box-shadow:0px 10px 30px rgba(0,0,0,.15);
+    font-size: 28px;
 
 }
 
-header{
 
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    position:relative;
-    margin-bottom:25px;
+.back-icon {
 
-}
+    font-size: 22px;
 
-.back-icon{
+    color: #333;
 
-    position:absolute;
-    left:0;
-    font-size:20px;
-    cursor:pointer;
+    cursor: pointer;
 
 }
 
-header h2{
 
-    font-size:24px;
-    font-weight:700;
+.edit-button {
 
-}
+    display: flex;
 
-.input-group{
+    align-items: center;
 
-    margin-bottom:18px;
+    gap: 8px;
 
-}
+    padding: 10px 18px;
 
-.input-group label{
+    border: none;
 
-    display:block;
-    margin-bottom:8px;
-    font-weight:600;
-    font-size:15px;
+    border-radius: 8px;
 
-}
+    background: #4f8dfd;
 
-textarea{
+    color: white;
 
-    width:100%;
-    min-height:55px;
-    border:1px solid #d8d8d8;
-    border-radius:10px;
-    padding:12px;
-    resize:none;
-    font-size:14px;
-    outline:none;
+    cursor: pointer;
+
+    font-size: 14px;
 
 }
 
-textarea:focus{
 
-    border-color:#6b8cff;
+.edit-button:hover {
 
-}
-
-.date-input{
-
-    position:relative;
+    background: #3d7ce8;
 
 }
 
-.date-input input{
 
-    width:100%;
-    border:1px solid #d8d8d8;
-    border-radius:10px;
-    padding:12px;
-    font-size:14px;
-    outline:none;
 
-}
+/* Add History */
 
-.calendar-icon{
+.add-history {
 
-    position:absolute;
-    right:15px;
-    top:50%;
-    transform:translateY(-50%);
-    color:#888;
-    pointer-events:none;
+    background: white;
+
+    padding: 20px;
+
+    border-radius: 12px;
+
+    margin-bottom: 25px;
+
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 
 }
 
-button{
 
-    width:100%;
-    margin-top:25px;
-    padding:14px;
-    border:none;
-    border-radius:10px;
-    background:#767676;
-    color:white;
-    font-size:16px;
-    font-weight:bold;
-    cursor:pointer;
-    transition:.3s;
+.add-history h3 {
+
+    margin-top: 0;
 
 }
 
-button:hover{
 
-    background:#5c5c5c;
+.add-history select,
+
+.add-history input {
+
+    padding: 10px;
+
+    margin-right: 10px;
+
+    border: 1px solid #ddd;
+
+    border-radius: 7px;
 
 }
 
-@media(max-width:500px){
 
-.phone{
+.add-button {
 
-    width:100%;
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 7px;
+
+    padding: 10px 15px;
+
+    border: none;
+
+    border-radius: 7px;
+
+    background: #4f8dfd;
+
+    color: white;
+
+    cursor: pointer;
 
 }
 
+
+.add-button:hover {
+
+    background: #3d7ce8;
+
 }
+
+
+
+/* History Sections */
+
+.history-section {
+
+    background: white;
+
+    padding: 20px;
+
+    border-radius: 12px;
+
+    margin-bottom: 20px;
+
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+
+}
+
+
+.history-section h3 {
+
+    margin-top: 0;
+
+    margin-bottom: 15px;
+
+}
+
+
+.history-section-header {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+}
+
+
+
+/* Individual record */
+
+.history-item {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    padding: 15px 0;
+
+    border-bottom: 1px solid #eee;
+
+}
+
+
+.history-item:last-child {
+
+    border-bottom: none;
+
+}
+
+
+.history-item-info {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 5px;
+
+}
+
+
+.history-item-info strong {
+
+    font-size: 16px;
+
+}
+
+
+.history-item-info span {
+
+    font-size: 13px;
+
+    color: #777;
+
+}
+
+
+
+/* Edit/Delete buttons */
+
+.history-actions {
+
+    display: flex;
+
+    gap: 10px;
+
+}
+
+
+.history-actions button {
+
+    border: none;
+
+    background: transparent;
+
+    cursor: pointer;
+
+    font-size: 16px;
+
+    color: #555;
+
+}
+
+
+.history-actions button:hover {
+
+    color: #4f8dfd;
+
+}
+
+
+.empty-message {
+
+    color: #777;
+
+    font-size: 14px;
+
+}
+
+
+
+/* Last checkup */
+
+.history-section input[type="date"] {
+
+    padding: 10px;
+
+    border: 1px solid #ddd;
+
+    border-radius: 7px;
+
+}
+

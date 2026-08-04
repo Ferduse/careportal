@@ -1,336 +1,580 @@
-import { Link, NavLink } from "react-router-dom";
-import { useState } from "react";
+import { Link, NavLink, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import "./Dashboard.css";
-import { 
-  FaBars,
-  FaUserCircle,
-  FaHome,
-  FaCalendarAlt,
-  FaFileMedical,
-  FaChartBar,
-  FaCog,
-  FaCalendarCheck,
-  FaShieldAlt,
-  FaClipboard
+
+import {
+    FaHome,
+    FaCalendarAlt,
+    FaFileMedical,
+    FaChartBar,
+    FaCalendarCheck,
+    FaShieldAlt,
+    FaClipboard
 } from "react-icons/fa";
 
 
+function Dashboard() {
 
-function Dashboard(){
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+    const navigate = useNavigate();
 
-return (
 
-<div className="dashboard-container">
+    // Store appointments
+    const [appointments, setAppointments] = useState([]);
 
 
-{/* Sidebar */}
+    // Store latest risk result
+    const [latestRisk, setLatestRisk] = useState(null);
 
-<div className="sidebar">
 
-  <NavLink
-    to="/dashboard"
-    className={({ isActive }) =>
-      isActive ? "side-item active" : "side-item"
-    }
-  >
-    <FaHome />
-    <span>Dashboard</span>
-  </NavLink>
+    // Store medical history
+    const [medicalHistory, setMedicalHistory] = useState({
+        conditions: [],
+        medications: [],
+        allergies: [],
+        surgeries: [],
+        lastCheckup: ""
+    });
 
-  <NavLink
-    to="/appointments"
-    className={({ isActive }) =>
-      isActive ? "side-item active" : "side-item"
-    }
-  >
-    <FaCalendarAlt />
-    <span>Appointments</span>
-  </NavLink>
 
-  <NavLink
-    to="/medical-history"
-    className={({ isActive }) =>
-      isActive ? "side-item active" : "side-item"
-    }
-  >
-    <FaFileMedical />
-    <span>
-      Medical
-      <br />
-      History
-    </span>
-  </NavLink>
+    // Store logged-in user
+    const [user, setUser] = useState(null);
 
-  <NavLink
-    to="/prediction"
-    className={({ isActive }) =>
-      isActive ? "side-item active" : "side-item"
-    }
-  >
-    <FaChartBar />
-    <span>
-      Risk
-      <br />
-      Prediction
-    </span>
-  </NavLink>
 
-</div>
+    // Load dashboard information
+    useEffect(() => {
 
+        // Load user information
+        const savedUser =
+            JSON.parse(localStorage.getItem("user"));
 
-{/* Main Area */}
+        if (savedUser) {
+            setUser(savedUser);
+        }
 
-<div className="main-content">
 
+        // Load appointments
+        const savedAppointments =
+            JSON.parse(localStorage.getItem("appointments")) || [];
 
+        setAppointments(savedAppointments);
 
-{/* Navbar */}
 
-<div className="menu-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
-    <FaBars size={25} />
-    <h2>Dashboard</h2>
-</div>
+        // Load risk results
+        const savedRiskResults =
+            JSON.parse(localStorage.getItem("riskResults")) || [];
 
+        if (savedRiskResults.length > 0) {
+            setLatestRisk(savedRiskResults[0]);
+        }
 
 
+        // Load medical history
+        const savedMedicalHistory =
+            JSON.parse(localStorage.getItem("medicalHistory"));
 
+        if (savedMedicalHistory) {
+            setMedicalHistory(savedMedicalHistory);
+        }
 
+    }, []);
 
-{/* Dashboard Content */}
 
-<div className="dashboard-body">
+    // Logout
+    const handleLogout = () => {
 
+        // Keep the user's account information saved
+        // but mark the user as logged out
+        localStorage.setItem(
+            "isLoggedIn",
+            "false"
+        );
 
-<h2>
-Welcome, Patient!
-</h2>
+        navigate("/");
 
+    };
 
-<p>
-Here's your health overview.
-</p>
 
+    // Get today's date
+    const today = new Date();
 
+    today.setHours(0, 0, 0, 0);
 
 
+    // Get upcoming appointments
+    const upcomingAppointments = appointments
+        .filter((appointment) => {
 
+            const appointmentDate =
+                new Date(
+                    appointment.date + "T00:00:00"
+                );
 
-{/* Appointment Card */}
+            return appointmentDate >= today;
 
-<div className="dashboard-card">
+        })
+        .sort((a, b) => {
 
+            const dateA =
+                new Date(
+                    a.date + "T00:00:00"
+                );
 
-<div className="card-icon">
+            const dateB =
+                new Date(
+                    b.date + "T00:00:00"
+                );
 
-<FaCalendarCheck size={45}/>
+            return dateA - dateB;
 
-</div>
+        });
 
 
+    // Only show the next 3 appointments
+    const dashboardAppointments =
+        upcomingAppointments.slice(0, 3);
 
-<div>
 
+    return (
 
-<h3>
-Upcoming Appointment
-</h3>
+        <div className="dashboard-container">
 
 
-<p>
-<b>
-Dr. Sarah Smith
-</b>
-</p>
+            {/* Sidebar */}
 
+            <div className="sidebar">
 
-<p>
-May 24, 2025 • 10:00 AM
-</p>
+                <NavLink
+                    to="/dashboard"
+                    className={({ isActive }) =>
+                        isActive
+                            ? "side-item active"
+                            : "side-item"
+                    }
+                >
 
+                    <FaHome />
 
-<p>
-General Physician
-</p>
+                    <span>
+                        Dashboard
+                    </span>
 
+                </NavLink>
 
-<Link to="/appointments">
-View Details 〉
-</Link>
 
+                <NavLink
+                    to="/appointments"
+                    className={({ isActive }) =>
+                        isActive
+                            ? "side-item active"
+                            : "side-item"
+                    }
+                >
 
-</div>
+                    <FaCalendarAlt />
 
+                    <span>
+                        Book Appointment
+                    </span>
 
-</div>
+                </NavLink>
 
 
+                <NavLink
+                    to="/medical-history"
+                    className={({ isActive }) =>
+                        isActive
+                            ? "side-item active"
+                            : "side-item"
+                    }
+                >
 
+                    <FaFileMedical />
 
+                    <span>
+                        Medical
+                        <br />
+                        History
+                    </span>
 
+                </NavLink>
 
 
-{/* Risk Card */}
+                <NavLink
+                    to="/prediction"
+                    className={({ isActive }) =>
+                        isActive
+                            ? "side-item active"
+                            : "side-item"
+                    }
+                >
 
-<div className="dashboard-card">
+                    <FaChartBar />
 
+                    <span>
+                        Risk
+                        <br />
+                        Prediction
+                    </span>
 
-<div className="card-icon">
+                </NavLink>
 
-<FaShieldAlt size={45}/>
+                {/* Logout */}
 
-</div>
+                <button
+                    className="side-item logout-side-item"
+                    onClick={handleLogout}
+                >
+                    <span>Logout</span>
+                </button>
 
+            </div>
 
 
 
-<div>
+            {/* Main Area */}
 
+            <div className="main-content">
 
-<h3>
-Latest Risk Result
-</h3>
 
+                {/* Navbar */}
 
+              <div className="top-navbar">
 
-<p>
-Diabetes Risk:
+                  <h2>
+                      Dashboard
+                  </h2>
 
-<span className="risk">
-Medium
-</span>
+                  <div className="welcome-message">
 
-</p>
+                      Welcome,{" "}
 
+                      {user?.firstName || "User"}
 
+                  </div>
 
-<p>
-May 18, 2025
-</p>
+               </div>
 
 
 
-<a>
-View History 〉
-</a>
+                {/* Dashboard Body */}
 
+                <div className="dashboard-body">
 
+                    <p>
+                        Here's your health overview.
+                    </p>
 
-</div>
 
 
-</div>
+                    {/* Upcoming Appointments */}
 
+                    <div className="dashboard-card">
 
+                        <div className="card-icon">
 
+                            <FaCalendarCheck size={45} />
 
+                        </div>
 
 
+                        <div className="appointment-card-content">
 
-{/* Medical History Card */}
+                            <div className="appointment-header">
 
-<div className="dashboard-card">
+                                <h3>
+                                    Upcoming Appointments
+                                </h3>
 
 
-<div className="card-icon">
+                                <Link to="/upcoming-appointments">
+                                    View All 〉
+                                </Link>
 
-<FaClipboard size={45}/>
+                            </div>
 
-</div>
 
+                            {dashboardAppointments.length > 0 ? (
 
+                                dashboardAppointments.map(
+                                    (appointment) => (
 
+                                        <div
+                                            className="upcoming-appointment"
+                                            key={appointment.id}
+                                        >
 
-<div>
+                                            <p>
+                                                <b>
+                                                    {appointment.doctor}
+                                                </b>
+                                            </p>
 
 
-<h3>
-Medical History Summary
-</h3>
+                                            <p>
 
+                                                {formatDate(
+                                                    appointment.date
+                                                )}
 
+                                                {" • "}
 
-<p>
-Conditions
+                                                {appointment.time}
 
-<span className="number">
-2
-</span>
+                                            </p>
 
-</p>
 
+                                            <p>
+                                                {appointment.reason}
+                                            </p>
 
+                                        </div>
 
-<p>
-Medications
+                                    )
 
-<span className="number">
-1
-</span>
+                                )
 
-</p>
+                            ) : (
 
+                                <div>
 
+                                    <p>
+                                        No upcoming appointments.
+                                    </p>
 
-<p>
-Allergies
 
-<span className="number">
-1
-</span>
+                                    <Link to="/appointments">
+                                        Book Appointment 〉
+                                    </Link>
 
-</p>
+                                </div>
 
+                            )}
 
+                        </div>
 
-<p>
-Surgeries
+                    </div>
 
-<span className="number">
-0
-</span>
 
-</p>
 
+                    {/* Risk Card */}
 
+                    <div className="dashboard-card">
 
-<p>
-Last Checkup
+                        <div className="card-icon">
 
-<span className="date">
-Jan 15, 2025
-</span>
+                            <FaShieldAlt size={45} />
 
-</p>
+                        </div>
 
 
+                        <div>
 
-<Link to="/medical-history">
-  View Full History 〉
-</Link>
+                            <h3>
+                                Latest Risk Result
+                            </h3>
 
 
+                            {latestRisk ? (
 
-</div>
+                                <>
 
+                                    <p>
 
-</div>
+                                        Diabetes Risk:
 
+                                        <span className="risk">
+                                            {latestRisk.risk}
+                                        </span>
 
+                                    </p>
 
 
-</div>
+                                    <p>
+                                        {latestRisk.date}
+                                    </p>
 
+                                </>
 
-</div>
+                            ) : (
 
+                                <>
 
-</div>
+                                    <p>
+                                        No risk assessment yet.
+                                    </p>
 
 
-);
+                                    <p>
+                                        Complete your first assessment.
+                                    </p>
+
+                                </>
+
+                            )}
+
+
+                            <NavLink
+                                className="dashboard-link"
+                                to="/risk-history"
+                            >
+                                View History 〉
+                            </NavLink>
+
+                        </div>
+
+                    </div>
+
+
+
+                    {/* Medical History Card */}
+
+                    <div className="dashboard-card">
+
+                        <div className="card-icon">
+
+                            <FaClipboard size={45} />
+
+                        </div>
+
+
+                        <div>
+
+                            <h3>
+                                Medical History Summary
+                            </h3>
+
+
+                            <p>
+
+                                Conditions:&nbsp;
+
+                                <span className="number">
+
+                                    {
+                                        medicalHistory
+                                            .conditions
+                                            .length
+                                    }
+
+                                </span>
+
+                            </p>
+
+
+                            <p>
+
+                                Medications:&nbsp;
+
+                                <span className="number">
+
+                                    {
+                                        medicalHistory
+                                            .medications
+                                            .length
+                                    }
+
+                                </span>
+
+                            </p>
+
+
+                            <p>
+
+                                Allergies:&nbsp;
+
+                                <span className="number">
+
+                                    {
+                                        medicalHistory
+                                            .allergies
+                                            .length
+                                    }
+
+                                </span>
+
+                            </p>
+
+
+                            <p>
+
+                                Surgeries:&nbsp;
+
+                                <span className="number">
+
+                                    {
+                                        medicalHistory
+                                            .surgeries
+                                            .length
+                                    }
+
+                                </span>
+
+                            </p>
+
+
+                            <p>
+
+                                Last Checkup:&nbsp;
+
+                                <span className="date">
+
+                                    {
+                                        medicalHistory.lastCheckup
+
+                                            ? formatDate(
+                                                medicalHistory.lastCheckup
+                                            )
+
+                                            : "Not recorded"
+                                    }
+
+                                </span>
+
+                            </p>
+
+
+                            <Link
+                                className="dashboard-link"
+                                to="/medical-history"
+                            >
+                                View Full History 〉
+                            </Link>
+
+                        </div>
+
+                    </div>
+
+
+                </div>
+
+            </div>
+
+        </div>
+
+    );
+
+}
+
+
+// Format date for display
+function formatDate(dateString) {
+
+    const date = new Date(
+        dateString + "T00:00:00"
+    );
+
+    return date.toLocaleDateString(
+        "en-US",
+        {
+            month: "long",
+            day: "numeric",
+            year: "numeric"
+        }
+    );
 
 }
 
 
 export default Dashboard;
+
+

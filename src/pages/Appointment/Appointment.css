@@ -92,33 +92,37 @@ textarea{
 }
 
 .book-btn{
-
     width:100%;
     padding:15px;
     border:none;
     border-radius:10px;
-    background:#5d5d5d;
+    background:  #5084e5;
     color:white;
     font-size:17px;
     font-weight:600;
     cursor:pointer;
-    transition:.3s;
     margin-top:10px;
 }
 
 .book-btn:hover{
 
-    background:#3d3d3d;
+    background: #3b7bea;
 }
 
 .cancel-btn{
-
     width:100%;
-    margin-top:18px;
-    border:none;
-    background:none;
-    color:#444;
-    text-decoration:underline;
+    padding:15px;
+    border: 1px solid #f0a0a0;
+    border-radius:10px;
+    background: #fff5f5;
+    color: #dc4c4c;
     cursor:pointer;
-    font-size:16px;
+    font-size:17px;
+    font-weight:600;
+    margin-top:18px;
+}
+
+.cancel-btn:hover {
+    background: #dc4c4c;
+    color: white;
 }

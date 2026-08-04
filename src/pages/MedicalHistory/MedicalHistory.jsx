@@ -1,121 +1,494 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import {
+    FaArrowLeft,
+    FaEdit,
+    FaTrash,
+    FaPlus,
+    FaSave
+} from "react-icons/fa";
+
 import "./MedicalHistory.css";
-import { FaArrowLeft, FaCalendarAlt } from "react-icons/fa";
+
 
 function MedicalHistory() {
-    const navigate = useNavigate();
-    
-  const [medicalHistory, setMedicalHistory] = useState({
-    conditions: "",
-    medications: "",
-    allergies: "",
-    surgeries: "",
-    lastCheckup: "",
-  });
 
-  const handleChange = (e) => {
-    setMedicalHistory({
-      ...medicalHistory,
-      [e.target.name]: e.target.value,
+    const [medicalHistory, setMedicalHistory] = useState({
+        conditions: [],
+        medications: [],
+        allergies: [],
+        surgeries: [],
+        lastCheckup: ""
     });
-  };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
 
-    console.log(medicalHistory);
+    const [editing, setEditing] = useState(false);
 
-    alert("Medical history saved successfully!");
-  };
+    const [newItem, setNewItem] = useState({
+        type: "conditions",
+        name: ""
+    });
 
-  return (
-    <div className="page">
 
-      <div className="phone">
+    // Load medical history when page opens
+    useEffect(() => {
 
-      <header>
-        <FaArrowLeft
-            className="back-icon"
-            onClick={() => navigate("/dashboard")}
-        />
-        <h2>Medical History</h2>
-      </header>
+        const savedMedicalHistory =
+            JSON.parse(localStorage.getItem("medicalHistory"));
 
-        <form onSubmit={handleSubmit}>
+        if (savedMedicalHistory) {
 
-          <div className="input-group">
-            <label>Past Medical Conditions</label>
+            setMedicalHistory(savedMedicalHistory);
 
-            <textarea
-              name="conditions"
-              placeholder="e.g. Hypertension, Asthma"
-              value={medicalHistory.conditions}
-              onChange={handleChange}
-            />
-          </div>
+        }
 
-          <div className="input-group">
-            <label>Current Medications</label>
+    }, []);
 
-            <textarea
-              name="medications"
-              placeholder="e.g. Metformin 500mg"
-              value={medicalHistory.medications}
-              onChange={handleChange}
-            />
-          </div>
 
-          <div className="input-group">
-            <label>Allergies</label>
+    // Save medical history
+    const saveMedicalHistory = (updatedHistory) => {
 
-            <textarea
-              name="allergies"
-              placeholder="e.g. Penicillin, Pollen"
-              value={medicalHistory.allergies}
-              onChange={handleChange}
-            />
-          </div>
+        setMedicalHistory(updatedHistory);
 
-          <div className="input-group">
-            <label>Past Surgeries</label>
+        localStorage.setItem(
+            "medicalHistory",
+            JSON.stringify(updatedHistory)
+        );
 
-            <textarea
-              name="surgeries"
-              placeholder="e.g. Appendectomy (2018)"
-              value={medicalHistory.surgeries}
-              onChange={handleChange}
-            />
-          </div>
+    };
 
-          <div className="input-group">
-            <label>Last Checkup Date</label>
 
-            <div className="date-input">
+    // Add a new medical history item
+    const addItem = () => {
 
-              <input
-                type="date"
-                name="lastCheckup"
-                value={medicalHistory.lastCheckup}
-                onChange={handleChange}
-              />
+        if (!newItem.name.trim()) {
+            return;
+        }
 
-              <FaCalendarAlt className="calendar-icon" />
+
+        const item = {
+
+            id: Date.now(),
+
+            name: newItem.name,
+
+            dateAdded:
+                new Date().toISOString().split("T")[0]
+
+        };
+
+
+        const updatedHistory = {
+
+            ...medicalHistory,
+
+            [newItem.type]: [
+                ...medicalHistory[newItem.type],
+                item
+            ]
+
+        };
+
+
+        saveMedicalHistory(updatedHistory);
+
+
+        setNewItem({
+            type: "conditions",
+            name: ""
+        });
+
+    };
+
+
+    // Delete item
+    const deleteItem = (type, id) => {
+
+        const updatedHistory = {
+
+            ...medicalHistory,
+
+            [type]: medicalHistory[type].filter(
+                (item) => item.id !== id
+            )
+
+        };
+
+
+        saveMedicalHistory(updatedHistory);
+
+    };
+
+
+    // Edit item
+    const editItem = (type, id) => {
+
+        const item =
+            medicalHistory[type].find(
+                (item) => item.id === id
+            );
+
+
+        const newName =
+            prompt("Edit entry:", item.name);
+
+
+        if (!newName || !newName.trim()) {
+            return;
+        }
+
+
+        const updatedHistory = {
+
+            ...medicalHistory,
+
+            [type]: medicalHistory[type].map(
+                (item) => {
+
+                    if (item.id === id) {
+
+                        return {
+                            ...item,
+                            name: newName
+                        };
+
+                    }
+
+                    return item;
+
+                }
+            )
+
+        };
+
+
+        saveMedicalHistory(updatedHistory);
+
+    };
+
+
+    // Update last checkup
+    const updateCheckup = (value) => {
+
+        const updatedHistory = {
+
+            ...medicalHistory,
+
+            lastCheckup: value
+
+        };
+
+
+        saveMedicalHistory(updatedHistory);
+
+    };
+
+
+    // Display date nicely
+    const formatDate = (dateString) => {
+
+        if (!dateString) {
+            return "Not recorded";
+        }
+
+
+        const date =
+            new Date(dateString + "T00:00:00");
+
+
+        return date.toLocaleDateString(
+            "en-US",
+            {
+                month: "long",
+                day: "numeric",
+                year: "numeric"
+            }
+        );
+
+    };
+
+
+    // Render each medical history section
+    const renderSection = (title, type) => {
+    
+        return (
+            <div className="history-section">
+    
+                <div className="history-section-header">
+    
+                    <h3>
+                        {title}
+                    </h3>
+    
+                </div>
+    
+    
+                {medicalHistory[type].length === 0 ? (
+    
+                    <p className="empty-message">
+                        No {title.toLowerCase()} recorded.
+                    </p>
+    
+                ) : (
+    
+                    medicalHistory[type].map((item) => {
+    
+                        return (
+                            <div
+                                className="history-item"
+                                key={item.id}
+                            >
+    
+                                <div className="history-item-info">
+    
+                                    <strong>
+                                        {item.name}
+                                    </strong>
+    
+                                    <span>
+                                        Added: {formatDate(item.dateAdded)}
+                                    </span>
+    
+                                </div>
+    
+    
+                                {editing && (
+    
+                                    <div className="history-actions">
+    
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                editItem(
+                                                    type,
+                                                    item.id
+                                                )
+                                            }
+                                        >
+                                            <FaEdit />
+                                        </button>
+    
+    
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                deleteItem(
+                                                    type,
+                                                    item.id
+                                                )
+                                            }
+                                        >
+                                            <FaTrash />
+                                        </button>
+    
+                                    </div>
+    
+                                )}
+    
+                            </div>
+                        );
+    
+                    })
+    
+                )}
+    
+            </div>
+        );
+    };
+
+    
+
+    return (
+
+        <div className="medical-history-page">
+
+
+            {/* Header */}
+
+            <div className="medical-history-header">
+
+                <Link to="/dashboard">
+
+                    <FaArrowLeft className="back-icon" />
+
+                </Link>
+
+
+                <h2>
+                    Medical History
+                </h2>
+
+
+                <button
+                    className="edit-button"
+                    onClick={() =>
+                        setEditing(!editing)
+                    }
+                >
+
+                    {editing
+                        ? <FaSave />
+                        : <FaEdit />
+                    }
+
+                    {editing
+                        ? "Done"
+                        : "Edit"
+                    }
+
+                </button>
 
             </div>
 
-          </div>
 
-          <button type="submit">
-            Save Changes
-          </button>
 
-        </form>
+            {/* Add New Entry */}
 
-      </div>
+            {editing && (
 
-    </div>
-  );
+                <div className="add-history">
+
+                    <h3>
+                        Add Medical History
+                    </h3>
+
+
+                    <select
+                        value={newItem.type}
+                        onChange={(e) =>
+                            setNewItem({
+                                ...newItem,
+                                type: e.target.value
+                            })
+                        }
+                    >
+
+                        <option value="conditions">
+                            Condition
+                        </option>
+
+                        <option value="medications">
+                            Medication
+                        </option>
+
+                        <option value="allergies">
+                            Allergy
+                        </option>
+
+                        <option value="surgeries">
+                            Surgery
+                        </option>
+
+                    </select>
+
+
+                    <input
+                        type="text"
+                        placeholder="Enter information..."
+                        value={newItem.name}
+                        onChange={(e) =>
+                            setNewItem({
+                                ...newItem,
+                                name: e.target.value
+                            })
+                        }
+                    />
+
+
+                    <button
+                        className="add-button"
+                        onClick={addItem}
+                    >
+
+                        <FaPlus />
+
+                        Add
+
+                    </button>
+
+                </div>
+
+            )}
+
+
+
+            {/* Conditions */}
+
+            {renderSection(
+                "Conditions",
+                "conditions"
+            )}
+
+
+
+            {/* Medications */}
+
+            {renderSection(
+                "Medications",
+                "medications"
+            )}
+
+
+
+            {/* Allergies */}
+
+            {renderSection(
+                "Allergies",
+                "allergies"
+            )}
+
+
+
+            {/* Surgeries */}
+
+            {renderSection(
+                "Surgeries",
+                "surgeries"
+            )}
+
+
+
+            {/* Last Checkup */}
+
+            <div className="history-section">
+
+                <h3>
+                    Last Checkup
+                </h3>
+
+
+                {editing ? (
+
+                    <input
+                        type="date"
+                        value={
+                            medicalHistory.lastCheckup
+                        }
+                        onChange={(e) =>
+                            updateCheckup(
+                                e.target.value
+                            )
+                        }
+                    />
+
+                ) : (
+
+                    <p>
+                        {formatDate(
+                            medicalHistory.lastCheckup
+                        )}
+                    </p>
+
+                )}
+
+            </div>
+
+
+        </div>
+
+    );
+
 }
+
 
 export default MedicalHistory;
