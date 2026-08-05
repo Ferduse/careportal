@@ -1,9 +1,4 @@
-# CarePortal Backend (Progress Report 1 Scaffold)
-
-This folder has a working backend scaffold focused on the two main priorities for Progress Report #1:
-
-- Authentication (register, login, token-protected profile route)
-- Centralized API error handling (consistent JSON error responses)
+# CarePortal Backend
 
 ## Stack
 
@@ -14,13 +9,27 @@ This folder has a working backend scaffold focused on the two main priorities fo
 
 ## What is Implemented
 
-- `POST /api/v1/auth/register`: creates a user account (currently stored in memory)
-- `POST /api/v1/auth/login`: checks login info and returns an access token
+- `POST /api/v1/auth/register`: creates a user account (in memory)
+- `POST /api/v1/auth/login`: returns access token and refresh token
+- `POST /api/v1/auth/refresh`: refreshes access token
+- `POST /api/v1/auth/logout`: revokes refresh token
 - `GET /api/v1/auth/me`: protected route that checks bearer token
+- `PUT /api/v1/patient/profile`: create/update patient profile
+- `GET /api/v1/patient/profile`: read patient profile
+- `POST /api/v1/appointments`: create appointment
+- `GET /api/v1/appointments`: list appointments for current user
+- `PUT /api/v1/appointments/{appointment_id}`: update appointment
+- `POST /api/v1/appointments/{appointment_id}/cancel`: cancel appointment
+- `POST /api/v1/medical-history`: create medical history record
+- `GET /api/v1/medical-history`: list history records
+- `PUT /api/v1/medical-history/{record_id}`: update history record
+- `POST /api/v1/predictions`: run diabetes risk prediction (rule-based placeholder)
+- `GET /api/v1/predictions`: list prediction history
 - Global exception handling for:
   - business errors (conflict/auth/not found)
   - validation errors (422)
   - unexpected errors (500)
+- Simple request logging middleware
 - `GET /health`: basic health check endpoint
 
 ## Run Locally
@@ -70,10 +79,10 @@ You can test everything through Swagger UI at `http://127.0.0.1:8000/docs`.
 
 - Expected result: returns new user info (id, full_name, email)
 
-### 3) Login and get token
+### 3) Login and get tokens
 
 - Call `POST /api/v1/auth/login` with same email/password
-- Expected result: returns `access_token` and `token_type`
+- Expected result: returns `access_token`, `refresh_token`, and `token_type`
 
 ### 4) Test protected route
 
@@ -82,7 +91,35 @@ You can test everything through Swagger UI at `http://127.0.0.1:8000/docs`.
 - Call `GET /api/v1/auth/me`
 - Expected result: returns the logged-in user info
 
-### 5) Test error handling
+### 5) Test patient profile
+
+- Call `PUT /api/v1/patient/profile`
+- Then call `GET /api/v1/patient/profile`
+
+### 6) Test appointments
+
+- Create appointment with `POST /api/v1/appointments`
+- List with `GET /api/v1/appointments`
+- Update with `PUT /api/v1/appointments/{appointment_id}`
+- Cancel with `POST /api/v1/appointments/{appointment_id}/cancel`
+
+### 7) Test medical history
+
+- Create with `POST /api/v1/medical-history`
+- List with `GET /api/v1/medical-history`
+- Update with `PUT /api/v1/medical-history/{record_id}`
+
+### 8) Test predictions
+
+- Submit inputs to `POST /api/v1/predictions`
+- Check history with `GET /api/v1/predictions`
+
+### 9) Test session endpoints
+
+- Call `POST /api/v1/auth/refresh` with refresh token from login
+- Call `POST /api/v1/auth/logout` with refresh token
+
+### 10) Test error handling
 
 - Duplicate register:
   - Register the same email again
