@@ -13,6 +13,8 @@ from imblearn.over_sampling import SMOTE
 import torch
 import torch.nn as nn
 
+import joblib
+
 # --- Load Dataset ---
 
 # read data
@@ -602,3 +604,18 @@ print(f"Precision: {poly_precision * 100:.2f}%")
 # F1 Score
 poly_f1 = f1_score(y_test, poly_predictions)
 print(f"F1 Score: {poly_f1 * 100:.2f}%")
+
+# --- Saving selected model and scaler ---
+
+# Save the trained Random Forest model
+joblib.dump(rf_model, "random_forest_model.pkl")
+print("Random Forest model saved.")
+
+# Save the scaler
+joblib.dump(scaler, "standard_scaler.pkl")
+print("StandardScaler saved.")
+
+# Save the feature order
+feature_names = X_train.columns.tolist()
+joblib.dump(feature_names, "feature_names.pkl")
+print("Files saved successfully.")
