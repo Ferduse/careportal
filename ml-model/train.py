@@ -208,7 +208,7 @@ print(f"ROC-AUC: {rf_roc_auc:.4f}")
 
 
 # --- Pytorch Neural Network ---
-print("\n--- PyTorch Neural Network ---\n")
+print("\n--- PyTorch Neural Network ORIGINAL---\n")
 
 # Convert Pandas DataFrame to a float32 NumPy array, then to a PyTorch tensor
 X_train_tensor = torch.tensor(X_train.to_numpy(dtype="float32"))
@@ -218,6 +218,7 @@ y_test_tensor = torch.tensor(y_test.to_numpy(dtype="float32"))
 
 print("Training Features Tensor:", X_train_tensor.shape)
 print("Training Labels Tensor:", y_train_tensor.shape)
+print()
 print("Testing Features Tensor:", X_test_tensor.shape)
 print("Testing Labels Tensor:", y_test_tensor.shape)
 print()
@@ -229,7 +230,7 @@ class DiabetesNN(nn.Module):
         self.fc2 = nn.Linear(16, 8)
         self.output = nn.Linear(8, 1)
         
-        # Activation function ReLU to learn more complex patterns 
+        # Activation function ReLU (Rectified Linear Unit) to learn more complex patterns 
     def forward(self,x):
         x = torch.relu(self.fc1(x))
         x = torch.relu(self.fc2(x))
@@ -266,6 +267,9 @@ y_test_tensor = y_test_tensor.view(-1, 1)
 
 # For the learning curve graph
 # losses = []
+
+# Begin training 
+model.train()
 
 # Repeats training process 100 times 
 epochs = 100
@@ -358,6 +362,138 @@ print(f"F1 Score: {nn_f1 * 100:.2f}%")
 # ROC-AUC: Uses probabilities instead of final 0/1 predictions
 nn_roc_auc = roc_auc_score(nn_y_test, nn_probabilities)
 print(f"ROC-AUC: {nn_roc_auc:.4f}\n")
+
+# -- PyTorch NN with SMOTE --- 
+print("\n --- Pytorch Neural Network with SMOTE --- ")
+
+# Convert the SMOTE-balanced training data into PyTorch tensors
+X_train_smote_tensor = torch.tensor(X_train_smote.to_numpy(dtype="float32"))
+y_train_smote_tensor = torch.tensor(y_train_smote.to_numpy(dtype="float32"))
+
+# The original test tensors are reused:
+# X_test_tensor
+# y_test_tensor
+
+print("SMOTE Training Features Tensor:", X_train_smote_tensor.shape)
+print("SMOTE Training Labels Tensor:", y_train_smote_tensor.shape)
+print()
+print("Original Testing Features Tensor:", X_test_tensor.shape)
+print("Original Testing Labels Tensor:",y_test_tensor.shape)
+print()
+
+# Reshape the SMOTE training labels to match the model output
+y_train_smote_tensor = y_train_smote_tensor.view(-1, 1)
+
+torch.manual_seed(42)
+smote_nn_model = DiabetesNN()
+
+# Use the standard binary classification loss
+smote_nn_loss_function = nn.BCEWithLogitsLoss()
+
+# Create a new optimizer for the new model
+smote_nn_optimizer = torch.optim.Adam(smote_nn_model.parameters(), lr=0.001)
+
+# Save each epoch's loss for loss learning curve
+# smote_nn_losses = []
+
+# Begin training
+smote_nn_model.train()
+
+# Train the model 
+smote_nn_epochs = 100
+
+for epoch in range(smote_nn_epochs):
+    # 1. Send the SMOTE-balanced patient data through the model
+    smote_nn_outputs = smote_nn_model(X_train_smote_tensor)
+
+    # 2. Compare the predictions with the SMOTE labels
+    smote_nn_loss = smote_nn_loss_function(smote_nn_outputs, y_train_smote_tensor)
+
+    # 3. Clear gradients from the previous epoch
+    smote_nn_optimizer.zero_grad()
+
+    # 4. Calculate how the weights and biases should change
+    smote_nn_loss.backward()
+
+    # 5. Update the weights and biases
+    smote_nn_optimizer.step()
+
+    # Save the loss 
+    #smote_nn_losses.append(smote_nn_loss.item())
+
+    # Print progress every 10 epochs
+    if (epoch + 1) % 10 == 0:
+        print(f"Epoch [{epoch + 1}/{smote_nn_epochs}], " f"Loss: {smote_nn_loss.item():.4f}")
+
+"""
+# Loss Curve for new model with SMOTE
+plt.figure(figsize=(8, 5))
+plt.plot(range(1, smote_nn_epochs + 1), smote_nn_losses, marker="o", markersize=2)
+plt.title("PyTorch NN With SMOTE Learning Curve")
+plt.xlabel("Epoch")
+plt.ylabel("Training Loss")
+# Make the graph start at Epoch 1
+plt.xlim(1, smote_nn_epochs)
+plt.xticks([1, 20, 40, 60, 80, 100])
+plt.grid(True)
+plt.show()
+"""
+
+# Evaluate the SMOTE NN
+smote_nn_model.eval()
+
+# Disable gradient calculations because the model is only predicting
+with torch.no_grad():
+    # Send the original test patients through the trained model
+    smote_nn_test_logits = smote_nn_model(X_test_tensor)
+
+    # Convert raw logits into diabetes probabilities
+    smote_nn_probabilities_tensor = torch.sigmoid(smote_nn_test_logits)
+
+    # Convert probabilities into final class predictions
+    # Probability >= 0.5 becomes diabetes (1)
+    # Probability < 0.5 becomes no diabetes (0)
+    smote_nn_predictions_tensor = (smote_nn_probabilities_tensor >= 0.5).int()
+
+# Convert tensors into one-dimensional NumPy arrays
+smote_nn_predictions = (smote_nn_predictions_tensor.numpy().ravel())
+smote_nn_probabilities = (smote_nn_probabilities_tensor.numpy().ravel())
+
+# y_test_tensor is still the original unchanged test labels
+smote_nn_y_test = (y_test_tensor.numpy().ravel())
+
+# Evaluation Metrics 
+
+# Accuracy
+smote_nn_accuracy = accuracy_score(smote_nn_y_test,smote_nn_predictions)
+print(f"\nAccuracy: " f"{smote_nn_accuracy * 100:.2f}%")
+
+# Confusion Matrix
+smote_nn_cm = confusion_matrix(smote_nn_y_test,smote_nn_predictions)
+print("\nConfusion Matrix:")
+print(smote_nn_cm)
+
+# Recall
+smote_nn_recall = recall_score(smote_nn_y_test,smote_nn_predictions, zero_division=0)
+print(f"\nRecall: "f"{smote_nn_recall * 100:.2f}%")
+
+# Specificity
+smote_nn_tn, smote_nn_fp, smote_nn_fn, smote_nn_tp = (smote_nn_cm.ravel())
+smote_nn_specificity = (smote_nn_tn / (smote_nn_tn + smote_nn_fp))
+print(f"Specificity: "f"{smote_nn_specificity * 100:.2f}%")
+
+# Precision
+smote_nn_precision = precision_score(smote_nn_y_test, smote_nn_predictions, zero_division=0)
+print(f"Precision: " f"{smote_nn_precision * 100:.2f}%")
+
+# F1 Score
+smote_nn_f1 = f1_score(smote_nn_y_test, smote_nn_predictions, zero_division=0)
+print(f"F1 Score: " f"{smote_nn_f1 * 100:.2f}%")
+
+# ROC-AUC
+# Uses probabilities rather than final 0/1 predictions
+smote_nn_roc_auc = roc_auc_score(smote_nn_y_test, smote_nn_probabilities)
+print(f"ROC-AUC: " f"{smote_nn_roc_auc:.4f}")
 
 # --- SVM Models ---
 print("\n --- SVM - Linear ---")
