@@ -27,12 +27,13 @@ def predict(
     record = prediction_service.predict(
         user_id=current_user.id,
         age=payload.age,
-        bmi=payload.bmi,
-        hbA1c_level=payload.hbA1c_level,
-        blood_glucose_level=payload.blood_glucose_level,
+        gender=payload.gender,
         hypertension=payload.hypertension,
         heart_disease=payload.heart_disease,
         smoking_history=payload.smoking_history,
+        bmi=payload.bmi,
+        HbA1c_level=payload.HbA1c_level,
+        blood_glucose_level=payload.blood_glucose_level,
     )
     return _to_response(record)
 
