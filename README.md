@@ -78,18 +78,6 @@ It is responsible for:
 - Diabetes-risk prediction requests
 - Communication between the frontend and database
 
-### Service Layer
-
-The service layer contains the main application logic.
-
-It processes requests for:
-
-- User authentication
-- Patient accounts
-- Appointment scheduling
-- Medical-history management
-- Prediction history
-- Machine-learning input preparation
 
 ### Data Access Layer
 
