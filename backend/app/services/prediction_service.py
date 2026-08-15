@@ -35,6 +35,10 @@ class PredictionService:
         self._model = joblib.load(model_path)
         self._scaler = joblib.load(scaler_path)
         self._feature_names = joblib.load(feature_names_path)
+        # Note: backward-compatibility aliases and input normalizers (for legacy
+        # hbA1c_level key and lowercase gender/smoking_history variants) were
+        # removed from the request schema after end-to-end testing passed.
+        # The API now enforces strict canonical keys only.
 
     def predict(
         self,
