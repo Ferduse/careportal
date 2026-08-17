@@ -35,7 +35,7 @@ const Prediction = () => {
   };
 
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
 
     e.preventDefault();
 
@@ -56,55 +56,85 @@ const Prediction = () => {
     console.log("Prediction payload:", payload);
 
 
-    /*
-      TEMPORARY RESULT
+    // Temporary token for testing 
+    const accessToken = localStorage.getItem("access_token");
 
-      Your backend team will eventually replace this
-      with the actual prediction returned from the API.
-    */
-    const riskLevel = "Medium";
+    // Make sure token exists 
+    if (!accessToken) {
+      alert("No access token found. Please authenticate first.");
+      return;
+    }
 
+    try {
+      // Send request to FastAPI
+      const response = await fetch(
+        "http://127.0.0.1:8000/api/v1/predictions",
+        {
+          method: "POST",
+          // Sending data as JSON and sends access token to FastAPI
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify(payload), // convert from JS to JSON
+        }
+      );
 
-    // Create a new risk result
-    const newRiskResult = {
+      if (!response.ok) {
+        throw new Error("Prediction request failed");
+      }
 
-      id: Date.now(),
+      // Convert the FastAPI response from JSON to JS
+      const data = await response.json();
 
-      risk: riskLevel,
+      // Convert backend label for the UI 
+      const riskLevel =
+        data.risk_label === "high_risk" ? "High" : "Low";
 
-      date: new Date().toLocaleDateString("en-US", {
-        month: "long",
-        day: "numeric",
-        year: "numeric"
-      }),
+        // Debugging 
+      console.log("ML prediction response:", data);
 
-      // Save the information used for the prediction
-      ...payload
+      // Result object 
+      const newRiskResult = {
+        id: data.id,
+        risk: riskLevel,
+        riskScore: data.risk_score,
 
-    };
+        date: new Date(data.created_at).toLocaleDateString("en-US", {
+          month: "long",
+          day: "numeric",
+          year: "numeric",
+        }),
 
+        // Adds original health info, takes everything inside payload and puts it into newRiskResult.
+        // helps with remembering which patient inputs produced that prediction
+        ...payload,
+      };
 
-    // Get previous risk results
-    const previousResults =
-      JSON.parse(localStorage.getItem("riskResults")) || [];
+      // Get the previous results, if there isnt any start with an empty array
+      // converts stored JSON to JS 
+      const previousResults =
+        JSON.parse(localStorage.getItem("riskResults")) || [];
 
+        // Adds newest result to the beginning 
+      const updatedResults = [
+        newRiskResult,
+        ...previousResults,
+      ];
 
-    // Add newest result to the beginning
-    const updatedResults = [
-      newRiskResult,
-      ...previousResults
-    ];
+      // Save updated prediction history, converts it to JSON
+      localStorage.setItem(
+        "riskResults",
+        JSON.stringify(updatedResults)
+      );
 
+      // Displays the result
+      setResult(riskLevel);
 
-    // Save results
-    localStorage.setItem(
-      "riskResults",
-      JSON.stringify(updatedResults)
-    );
-
-
-    // Display result on this page
-    setResult(riskLevel);
+    } catch (error) {
+      console.error("Prediction error:", error);
+      alert("Unable to get prediction from the server.");
+    }
 
   };
 
@@ -174,15 +204,15 @@ const Prediction = () => {
                   Select Gender
                 </option>
 
-                <option value="gender_Female">
+                <option value="Female">
                   Female
                 </option>
 
-                <option value="gender_Male">
+                <option value="Male">
                   Male
                 </option>
 
-                <option value="gender_Other">
+                <option value="Other">
                   Other
                 </option>
 
@@ -336,27 +366,27 @@ const Prediction = () => {
                   Select
                 </option>
 
-                <option value="smoking_history_No">
-                  No
+                <option value="No Info">
+                  No Info
                 </option>
 
-                <option value="smoking_history_current">
+                <option value="current">
                   Current
                 </option>
 
-                <option value="smoking_history_ever">
+                <option value="ever">
                   Ever
                 </option>
 
-                <option value="smoking_history_former">
+                <option value="former">
                   Former
                 </option>
 
-                <option value="smoking_history_never">
+                <option value="never">
                   Never
                 </option>
 
-                <option value="smoking_history_not_current">
+                <option value="not current">
                   Not Current
                 </option>
 
