@@ -9,7 +9,7 @@
 
 ## What is Implemented
 
-- `POST /api/v1/auth/register`: creates a user account (in memory)
+- `POST /api/v1/auth/register`: creates a user account (database-backed)
 - `POST /api/v1/auth/login`: returns access token and refresh token
 - `POST /api/v1/auth/refresh`: refreshes access token
 - `POST /api/v1/auth/logout`: revokes refresh token
@@ -31,6 +31,11 @@
   - unexpected errors (500)
 - Simple request logging middleware
 - `GET /health`: basic health check endpoint
+
+Database workflow notes:
+- Runtime database file is under `careportal_backend/src/database/careportal.db`.
+- Schema and seed scripts are in `careportal_backend/src/database/init.sql` and `careportal_backend/src/database/insert_sample_data.sql`.
+- Shared SQL query templates are in `careportal_backend/src/database/queries.sql`.
 
 ## Run Locally
 

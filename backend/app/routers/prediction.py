@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, get_db
 from app.schemas.prediction import PredictionHistoryResponse, PredictionRequest, PredictionResponse
 from app.services.auth_service import UserRecord
 from app.services.prediction_service import PredictionRecord, prediction_service
@@ -23,8 +24,10 @@ def _to_response(record: PredictionRecord) -> PredictionResponse:
 def predict(
     payload: PredictionRequest,
     current_user: UserRecord = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ) -> PredictionResponse:
     record = prediction_service.predict(
+        db=db,
         user_id=current_user.id,
         age=payload.age,
         gender=payload.gender,
@@ -41,8 +44,9 @@ def predict(
 @router.get("", response_model=list[PredictionHistoryResponse])
 def list_predictions(
     current_user: UserRecord = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ) -> list[PredictionHistoryResponse]:
-    items = prediction_service.list_predictions(current_user.id)
+    items = prediction_service.list_predictions(db, current_user.id)
     return [
         PredictionHistoryResponse(
             id=item.id,

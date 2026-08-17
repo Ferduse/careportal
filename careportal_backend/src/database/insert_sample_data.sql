@@ -1,42 +1,27 @@
--- ============================================
--- SAMPLE DATA FOR CarePortal_backend
--- ============================================
+PRAGMA foreign_keys = ON;
 
--- 1. USERS FIRST
-INSERT INTO Users (email, password_hash, role) VALUES
-('john.doe@email.com', 'hashed123', 'patient'),
-('jane.smith@email.com', 'hashed456', 'patient'),
-('mike.johnson@email.com', 'hashed789', 'patient'),
-('dr.williams@hospital.com', 'hashed111', 'doctor'),
-('dr.brown@hospital.com', 'hashed222', 'doctor');
+-- Seed users (passwords are placeholders and not intended for login).
+INSERT OR IGNORE INTO users (id, full_name, email, password_hash, created_at) VALUES
+(1, 'John Doe', 'john.doe@email.com', 'seed-hash-john', CURRENT_TIMESTAMP),
+(2, 'Jane Smith', 'jane.smith@email.com', 'seed-hash-jane', CURRENT_TIMESTAMP),
+(3, 'Mike Johnson', 'mike.johnson@email.com', 'seed-hash-mike', CURRENT_TIMESTAMP);
 
--- 2. DOCTORS SECOND
-INSERT INTO Doctors (first_name, last_name, specialization, email, phone) VALUES
-('Sarah', 'Williams', 'Endocrinology', 'dr.williams@hospital.com', '555-0101'),
-('Michael', 'Brown', 'General Practice', 'dr.brown@hospital.com', '555-0102');
+INSERT OR IGNORE INTO patient_profiles (user_id, full_name, age, gender, bmi, updated_at) VALUES
+(1, 'John Doe', 39, 'male', 27.5, CURRENT_TIMESTAMP),
+(2, 'Jane Smith', 34, 'female', 24.1, CURRENT_TIMESTAMP),
+(3, 'Mike Johnson', 46, 'male', 31.2, CURRENT_TIMESTAMP);
 
--- 3. PATIENTS THIRD
-INSERT INTO Patients (user_id, first_name, last_name, date_of_birth, gender, phone, address) VALUES
-(1, 'John', 'Doe', '1985-03-15', 'male', '555-1001', '123 Main St'),
-(2, 'Jane', 'Smith', '1990-07-22', 'female', '555-1002', '456 Oak Ave'),
-(3, 'Mike', 'Johnson', '1978-11-30', 'male', '555-1003', '789 Pine Rd');
+INSERT OR IGNORE INTO appointments (id, user_id, provider_name, start_time, end_time, reason, status, created_at) VALUES
+(1, 1, 'Dr. Williams', '2099-08-10 09:00:00', '2099-08-10 09:30:00', 'Regular diabetes checkup', 'scheduled', CURRENT_TIMESTAMP),
+(2, 1, 'Dr. Brown', '2099-09-01 14:00:00', '2099-09-01 14:30:00', 'General checkup', 'scheduled', CURRENT_TIMESTAMP),
+(3, 2, 'Dr. Williams', '2099-08-15 11:00:00', '2099-08-15 11:30:00', 'First diabetes consultation', 'scheduled', CURRENT_TIMESTAMP);
 
--- 4. APPOINTMENTS
-INSERT INTO Appointments (patient_id, doctor_id, appointment_date, status, notes) VALUES
-(1, 1, '2025-08-10 09:00:00', 'scheduled', 'Regular diabetes checkup'),
-(1, 2, '2025-07-01 14:00:00', 'completed', 'General checkup completed'),
-(2, 1, '2025-08-15 11:00:00', 'scheduled', 'First diabetes consultation'),
-(3, 2, '2025-07-20 10:00:00', 'cancelled', 'Patient cancelled'),
-(2, 2, '2025-08-20 13:00:00', 'scheduled', 'Follow up appointment');
+INSERT OR IGNORE INTO medical_history (id, user_id, condition_name, notes, created_at) VALUES
+(1, 1, 'Hypertension', 'Former smoker, elevated blood glucose', CURRENT_TIMESTAMP),
+(2, 2, 'Routine Screening', 'No known chronic disease', CURRENT_TIMESTAMP),
+(3, 3, 'Diabetes Risk', 'Family history and high BMI', CURRENT_TIMESTAMP);
 
--- 5. MEDICAL HISTORY
-INSERT INTO MedicalHistory (patient_id, hypertension, heart_disease, smoking_history, bmi, HbA1c_level, blood_glucose_level, diagnosis_date) VALUES
-(1, 1, 0, 'former', 27.50, 6.80, 145, '2025-06-01'),
-(2, 0, 0, 'never', 24.10, 5.20, 98, '2025-06-15'),
-(3, 1, 1, 'current', 31.20, 7.50, 180, '2025-06-20');
-
--- 6. PREDICTIONS LAST
-INSERT INTO Predictions (patient_id, history_id, diabetes, confidence) VALUES
-(1, 1, 1, 0.87),
-(2, 2, 0, 0.92),
-(3, 3, 1, 0.95);
+INSERT OR IGNORE INTO predictions (id, user_id, risk_label, risk_score, created_at) VALUES
+(1, 1, 'high_risk', 0.87, CURRENT_TIMESTAMP),
+(2, 2, 'low_risk', 0.92, CURRENT_TIMESTAMP),
+(3, 3, 'high_risk', 0.95, CURRENT_TIMESTAMP);

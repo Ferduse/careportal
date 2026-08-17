@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, get_db
 from app.schemas.medical_history import (
     MedicalHistoryCreateRequest,
     MedicalHistoryResponse,
@@ -27,8 +28,10 @@ def _to_response(record: MedicalHistoryRecord) -> MedicalHistoryResponse:
 def create_medical_history(
     payload: MedicalHistoryCreateRequest,
     current_user: UserRecord = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ) -> MedicalHistoryResponse:
     record = medical_history_service.create_record(
+        db=db,
         user_id=current_user.id,
         condition_name=payload.condition_name,
         notes=payload.notes,
@@ -37,8 +40,11 @@ def create_medical_history(
 
 
 @router.get("", response_model=list[MedicalHistoryResponse])
-def list_medical_history(current_user: UserRecord = Depends(get_current_user)) -> list[MedicalHistoryResponse]:
-    records = medical_history_service.list_records(current_user.id)
+def list_medical_history(
+    current_user: UserRecord = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[MedicalHistoryResponse]:
+    records = medical_history_service.list_records(db, current_user.id)
     return [_to_response(item) for item in records]
 
 
@@ -47,8 +53,10 @@ def update_medical_history(
     record_id: int,
     payload: MedicalHistoryUpdateRequest,
     current_user: UserRecord = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ) -> MedicalHistoryResponse:
     record = medical_history_service.update_record(
+        db=db,
         user_id=current_user.id,
         record_id=record_id,
         condition_name=payload.condition_name,

@@ -1,67 +1,73 @@
-CREATE DATABASE IF NOT EXISTS CarePortal_backend;
-USE CarePortal_backend;
+PRAGMA foreign_keys = ON;
 
-CREATE TABLE Users (
-  user_id INT PRIMARY KEY AUTO_INCREMENT,
-  email VARCHAR(100) UNIQUE NOT NULL,
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  full_name VARCHAR(100) NOT NULL,
+  email VARCHAR(255) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
-  role ENUM('patient', 'doctor', 'admin'),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE Patients (
-  patient_id INT PRIMARY KEY AUTO_INCREMENT,
-  user_id INT,
-  first_name VARCHAR(50) NOT NULL,
-  last_name VARCHAR(50) NOT NULL,
-  date_of_birth DATE,
-  gender ENUM('male', 'female', 'other'),
-  phone VARCHAR(20),
-  address TEXT,
-  FOREIGN KEY (user_id) REFERENCES Users(user_id)
+CREATE INDEX IF NOT EXISTS ix_users_id ON users (id);
+CREATE UNIQUE INDEX IF NOT EXISTS ix_users_email ON users (email);
+
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  token TEXT NOT NULL UNIQUE,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE TABLE Doctors (
-  doctor_id INT PRIMARY KEY AUTO_INCREMENT,
-  first_name VARCHAR(50) NOT NULL,
-  last_name VARCHAR(50) NOT NULL,
-  specialization VARCHAR(100),
-  email VARCHAR(100) UNIQUE,
-  phone VARCHAR(20)
+CREATE INDEX IF NOT EXISTS ix_refresh_tokens_id ON refresh_tokens (id);
+CREATE INDEX IF NOT EXISTS ix_refresh_tokens_user_id ON refresh_tokens (user_id);
+
+CREATE TABLE IF NOT EXISTS patient_profiles (
+  user_id INTEGER PRIMARY KEY,
+  full_name VARCHAR(100) NOT NULL,
+  age INTEGER NOT NULL,
+  gender VARCHAR(20) NOT NULL,
+  bmi FLOAT NOT NULL,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE TABLE Appointments (
-  appointment_id INT PRIMARY KEY AUTO_INCREMENT,
-  patient_id INT,
-  doctor_id INT,
-  appointment_date DATETIME NOT NULL,
-  status ENUM('scheduled', 'completed', 'cancelled'),
-  notes TEXT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (patient_id) REFERENCES Patients(patient_id)
-  FOREIGN KEY (doctor_id) REFERENCES Doctors(doctor_id)
+CREATE TABLE IF NOT EXISTS appointments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  provider_name VARCHAR(100) NOT NULL,
+  start_time DATETIME NOT NULL,
+  end_time DATETIME NOT NULL,
+  reason VARCHAR(300) NOT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'scheduled',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE TABLE MedicalHistory (
-  history_id INT PRIMARY KEY AUTO_INCREMENT,
-  patient_id INT,
-  hypertension TINYINT(1),
-  heart_disease TINYINT(1),
-  smoking_history VARCHAR(50),
-  bmi               DECIMAL(5,2),
-  HbA1c_level       DECIMAL(5,2),
-  blood_glucose_level INT,
-  diagnosis_date DATE,
-  recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (patient_id) REFERENCES Patients(patient_id)
+CREATE INDEX IF NOT EXISTS ix_appointments_id ON appointments (id);
+CREATE INDEX IF NOT EXISTS ix_appointments_user_id ON appointments (user_id);
+CREATE INDEX IF NOT EXISTS ix_appointments_start_time ON appointments (start_time);
+
+CREATE TABLE IF NOT EXISTS medical_history (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  condition_name VARCHAR(100) NOT NULL,
+  notes VARCHAR(500) NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE TABLE Predictions (
-  history_id INT PRIMARY KEY AUTO_INCREMENT,
-  patient_id INT,
-  symptom_id INT,
-  diabetes INT,
-  confidence DECIMAL(5,2),
-  predicted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (patient_id) REFERENCES Patients(patient_id),
+CREATE INDEX IF NOT EXISTS ix_medical_history_id ON medical_history (id);
+CREATE INDEX IF NOT EXISTS ix_medical_history_user_id ON medical_history (user_id);
+
+CREATE TABLE IF NOT EXISTS predictions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  risk_label VARCHAR(50) NOT NULL,
+  risk_score FLOAT NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+CREATE INDEX IF NOT EXISTS ix_predictions_id ON predictions (id);
+CREATE INDEX IF NOT EXISTS ix_predictions_user_id ON predictions (user_id);

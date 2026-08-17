@@ -1,54 +1,50 @@
-from dataclasses import dataclass
-from datetime import datetime, timezone
+from sqlalchemy import select, text
+from sqlalchemy.orm import Session
 
 from app.core.errors import NotFoundError
+from app.db.models import MedicalHistory
+from app.db.sql_queries import get_sql_query
 
 
-@dataclass
-class MedicalHistoryRecord:
-    id: int
-    user_id: int
-    condition_name: str
-    notes: str
-    created_at: datetime
+MedicalHistoryRecord = MedicalHistory
 
 
 class MedicalHistoryService:
-    def __init__(self) -> None:
-        self._records_by_id: dict[int, MedicalHistoryRecord] = {}
-        self._next_id = 1
-
-    def create_record(self, user_id: int, condition_name: str, notes: str) -> MedicalHistoryRecord:
-        record = MedicalHistoryRecord(
-            id=self._next_id,
+    def create_record(self, db: Session, user_id: int, condition_name: str, notes: str) -> MedicalHistoryRecord:
+        record = MedicalHistory(
             user_id=user_id,
             condition_name=condition_name.strip(),
             notes=notes.strip(),
-            created_at=datetime.now(timezone.utc),
         )
-        self._records_by_id[record.id] = record
-        self._next_id += 1
+        db.add(record)
+        db.commit()
+        db.refresh(record)
         return record
 
-    def list_records(self, user_id: int) -> list[MedicalHistoryRecord]:
-        items = [r for r in self._records_by_id.values() if r.user_id == user_id]
-        return sorted(items, key=lambda x: x.created_at, reverse=True)
+    def list_records(self, db: Session, user_id: int) -> list[MedicalHistoryRecord]:
+        statement = select(MedicalHistory).from_statement(text(get_sql_query("list_medical_history_for_user")))
+        return list(db.scalars(statement, params={"user_id": user_id}).all())
 
     def update_record(
         self,
+        db: Session,
         user_id: int,
         record_id: int,
         condition_name: str | None,
         notes: str | None,
     ) -> MedicalHistoryRecord:
-        record = self._records_by_id.get(record_id)
-        if not record or record.user_id != user_id:
+        statement = select(MedicalHistory).from_statement(text(get_sql_query("get_medical_history_for_user")))
+        record = db.scalar(statement, params={"record_id": record_id, "user_id": user_id})
+        if not record:
             raise NotFoundError("Medical history record not found")
 
         if condition_name is not None:
             record.condition_name = condition_name.strip()
         if notes is not None:
             record.notes = notes.strip()
+
+        db.commit()
+        db.refresh(record)
         return record
 
 

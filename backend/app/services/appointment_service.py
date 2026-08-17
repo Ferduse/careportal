@@ -1,27 +1,20 @@
-from dataclasses import dataclass
 from datetime import datetime, timezone
 
+from sqlalchemy import select, text
+from sqlalchemy.orm import Session
+
 from app.core.errors import AppError, NotFoundError
+from app.db.models import Appointment
+from app.db.sql_queries import get_sql_query
 
 
-@dataclass
-class AppointmentRecord:
-    id: int
-    user_id: int
-    provider_name: str
-    start_time: datetime
-    end_time: datetime
-    reason: str
-    status: str
+AppointmentRecord = Appointment
 
 
 class AppointmentService:
-    def __init__(self) -> None:
-        self._appointments_by_id: dict[int, AppointmentRecord] = {}
-        self._next_id = 1
-
     def create_appointment(
         self,
+        db: Session,
         user_id: int,
         provider_name: str,
         start_time: datetime,
@@ -30,10 +23,9 @@ class AppointmentService:
     ) -> AppointmentRecord:
         self._validate_time_range(start_time, end_time)
         self._validate_not_in_past(start_time)
-        self._ensure_no_conflict(user_id, provider_name, start_time, end_time)
+        self._ensure_no_conflict(db, user_id, provider_name, start_time, end_time)
 
-        appointment = AppointmentRecord(
-            id=self._next_id,
+        appointment = Appointment(
             user_id=user_id,
             provider_name=provider_name.strip(),
             start_time=start_time,
@@ -41,22 +33,25 @@ class AppointmentService:
             reason=reason.strip(),
             status="scheduled",
         )
-        self._appointments_by_id[appointment.id] = appointment
-        self._next_id += 1
+        db.add(appointment)
+        db.commit()
+        db.refresh(appointment)
         return appointment
 
-    def list_appointments(self, user_id: int) -> list[AppointmentRecord]:
-        items = [a for a in self._appointments_by_id.values() if a.user_id == user_id]
-        return sorted(items, key=lambda x: x.start_time)
+    def list_appointments(self, db: Session, user_id: int) -> list[AppointmentRecord]:
+        statement = select(Appointment).from_statement(text(get_sql_query("list_appointments_for_user")))
+        return list(db.scalars(statement, params={"user_id": user_id}).all())
 
-    def get_appointment(self, user_id: int, appointment_id: int) -> AppointmentRecord:
-        appointment = self._appointments_by_id.get(appointment_id)
-        if not appointment or appointment.user_id != user_id:
+    def get_appointment(self, db: Session, user_id: int, appointment_id: int) -> AppointmentRecord:
+        statement = select(Appointment).from_statement(text(get_sql_query("get_appointment_for_user")))
+        appointment = db.scalar(statement, params={"appointment_id": appointment_id, "user_id": user_id})
+        if not appointment:
             raise NotFoundError("Appointment not found")
         return appointment
 
     def update_appointment(
         self,
+        db: Session,
         user_id: int,
         appointment_id: int,
         provider_name: str | None,
@@ -65,7 +60,7 @@ class AppointmentService:
         reason: str | None,
         status: str | None,
     ) -> AppointmentRecord:
-        appointment = self.get_appointment(user_id, appointment_id)
+        appointment = self.get_appointment(db, user_id, appointment_id)
         if appointment.status == "canceled":
             raise AppError("Canceled appointments cannot be updated", 400, "bad_request")
 
@@ -75,7 +70,7 @@ class AppointmentService:
 
         self._validate_time_range(new_start, new_end)
         self._validate_not_in_past(new_start)
-        self._ensure_no_conflict(user_id, new_provider, new_start, new_end, skip_id=appointment.id)
+        self._ensure_no_conflict(db, user_id, new_provider, new_start, new_end, skip_id=appointment.id)
 
         appointment.provider_name = new_provider
         appointment.start_time = new_start
@@ -84,11 +79,16 @@ class AppointmentService:
             appointment.reason = reason.strip()
         if status is not None:
             appointment.status = status
+
+        db.commit()
+        db.refresh(appointment)
         return appointment
 
-    def cancel_appointment(self, user_id: int, appointment_id: int) -> AppointmentRecord:
-        appointment = self.get_appointment(user_id, appointment_id)
+    def cancel_appointment(self, db: Session, user_id: int, appointment_id: int) -> AppointmentRecord:
+        appointment = self.get_appointment(db, user_id, appointment_id)
         appointment.status = "canceled"
+        db.commit()
+        db.refresh(appointment)
         return appointment
 
     def _validate_time_range(self, start_time: datetime, end_time: datetime) -> None:
@@ -103,24 +103,26 @@ class AppointmentService:
 
     def _ensure_no_conflict(
         self,
+        db: Session,
         user_id: int,
         provider_name: str,
         start_time: datetime,
         end_time: datetime,
         skip_id: int | None = None,
     ) -> None:
-        for appointment in self._appointments_by_id.values():
-            if appointment.user_id != user_id:
-                continue
-            if appointment.status == "canceled":
-                continue
-            if appointment.provider_name != provider_name:
-                continue
-            if skip_id is not None and appointment.id == skip_id:
-                continue
-            overlaps = start_time < appointment.end_time and end_time > appointment.start_time
-            if overlaps:
-                raise AppError("Appointment overlaps an existing time slot", 409, "conflict")
+        statement = select(Appointment).from_statement(text(get_sql_query("find_appointment_conflict")))
+        conflict = db.scalar(
+            statement,
+            params={
+                "user_id": user_id,
+                "provider_name": provider_name.strip(),
+                "start_time": start_time,
+                "end_time": end_time,
+                "skip_id": skip_id,
+            },
+        )
+        if conflict is not None:
+            raise AppError("Appointment overlaps an existing time slot", 409, "conflict")
 
 
 appointment_service = AppointmentService()

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, get_db
 from app.core.errors import AuthenticationError
 from app.core.security import (
     create_access_token,
@@ -23,9 +24,10 @@ router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
 
 @router.post("/register", response_model=UserPublic, status_code=201)
-def register(payload: UserRegisterRequest) -> UserPublic:
+def register(payload: UserRegisterRequest, db: Session = Depends(get_db)) -> UserPublic:
     # Create a new user account.
     user = auth_service.register_user(
+        db=db,
         full_name=payload.full_name,
         email=payload.email,
         password=payload.password,
@@ -34,18 +36,18 @@ def register(payload: UserRegisterRequest) -> UserPublic:
 
 
 @router.post("/login", response_model=AuthTokenResponse)
-def login(payload: UserLoginRequest) -> AuthTokenResponse:
+def login(payload: UserLoginRequest, db: Session = Depends(get_db)) -> AuthTokenResponse:
     # Validate login info and return JWT token.
-    user = auth_service.authenticate_user(email=payload.email, password=payload.password)
+    user = auth_service.authenticate_user(db, email=payload.email, password=payload.password)
     access_token = create_access_token(user.email)
     refresh_token = create_refresh_token(user.email)
-    auth_service.add_refresh_token(refresh_token)
+    auth_service.add_refresh_token(db, refresh_token, user.id)
     return AuthTokenResponse(access_token=access_token, refresh_token=refresh_token)
 
 
 @router.post("/refresh", response_model=AuthTokenResponse)
-def refresh_token(payload: RefreshTokenRequest) -> AuthTokenResponse:
-    if not auth_service.is_refresh_token_active(payload.refresh_token):
+def refresh_token(payload: RefreshTokenRequest, db: Session = Depends(get_db)) -> AuthTokenResponse:
+    if not auth_service.is_refresh_token_active(db, payload.refresh_token):
         raise AuthenticationError("Refresh token is invalid or logged out")
 
     try:
@@ -54,16 +56,17 @@ def refresh_token(payload: RefreshTokenRequest) -> AuthTokenResponse:
         raise AuthenticationError(str(exc)) from exc
 
     # Rotate refresh token so old token cannot be reused.
-    auth_service.revoke_refresh_token(payload.refresh_token)
+    auth_service.revoke_refresh_token(db, payload.refresh_token)
+    user = auth_service.get_user_by_email(db, email)
     new_access_token = create_access_token(email)
     new_refresh_token = create_refresh_token(email)
-    auth_service.add_refresh_token(new_refresh_token)
+    auth_service.add_refresh_token(db, new_refresh_token, user.id)
     return AuthTokenResponse(access_token=new_access_token, refresh_token=new_refresh_token)
 
 
 @router.post("/logout", response_model=MessageResponse)
-def logout(payload: LogoutRequest) -> MessageResponse:
-    auth_service.revoke_refresh_token(payload.refresh_token)
+def logout(payload: LogoutRequest, db: Session = Depends(get_db)) -> MessageResponse:
+    auth_service.revoke_refresh_token(db, payload.refresh_token)
     return MessageResponse(message="Logged out")
 
 

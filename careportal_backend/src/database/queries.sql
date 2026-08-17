@@ -182,22 +182,56 @@ LIMIT 1;
 
 -- ============================================
 -- DASHBOARD SUMMARY QUERY
--- ============================================
+-- name: get_user_by_email
+SELECT id, full_name, email, password_hash, created_at
+FROM users
+WHERE email = :email;
 
--- Get full patient dashboard summary
-SELECT
-    p.first_name,
-    p.last_name,
-    COUNT(DISTINCT a.appointment_id) as total_appointments,
-    SUM(CASE WHEN a.status = 'scheduled' THEN 1 ELSE 0 END) as upcoming_appointments,
-    SUM(CASE WHEN a.status = 'cancelled' THEN 1 ELSE 0 END) as cancelled_appointments,
-    pr.diabetes as latest_diabetes_prediction,
-    pr.confidence as latest_confidence,
-    pr.predicted_date as last_prediction_date
-FROM Patients p
-LEFT JOIN Appointments a ON p.patient_id = a.patient_id
-LEFT JOIN Predictions pr ON p.patient_id = pr.patient_id
-WHERE p.patient_id = ?
-GROUP BY p.patient_id
-ORDER BY pr.predicted_date DESC
+-- name: get_refresh_token_by_token
+SELECT id, user_id, token, created_at
+FROM refresh_tokens
+WHERE token = :token;
+
+-- name: get_patient_profile_by_user_id
+SELECT user_id, full_name, age, gender, bmi, updated_at
+FROM patient_profiles
+WHERE user_id = :user_id;
+
+-- name: list_appointments_for_user
+SELECT id, user_id, provider_name, start_time, end_time, reason, status, created_at
+FROM appointments
+WHERE user_id = :user_id
+ORDER BY start_time ASC;
+
+-- name: get_appointment_for_user
+SELECT id, user_id, provider_name, start_time, end_time, reason, status, created_at
+FROM appointments
+WHERE id = :appointment_id AND user_id = :user_id;
+
+-- name: find_appointment_conflict
+SELECT id, user_id, provider_name, start_time, end_time, reason, status, created_at
+FROM appointments
+WHERE user_id = :user_id
+    AND provider_name = :provider_name
+    AND status != 'canceled'
+    AND start_time < :end_time
+    AND end_time > :start_time
+    AND (:skip_id IS NULL OR id != :skip_id)
 LIMIT 1;
+
+-- name: list_medical_history_for_user
+SELECT id, user_id, condition_name, notes, created_at
+FROM medical_history
+WHERE user_id = :user_id
+ORDER BY created_at DESC;
+
+-- name: get_medical_history_for_user
+SELECT id, user_id, condition_name, notes, created_at
+FROM medical_history
+WHERE id = :record_id AND user_id = :user_id;
+
+-- name: list_predictions_for_user
+SELECT id, user_id, risk_label, risk_score, created_at
+FROM predictions
+WHERE user_id = :user_id
+ORDER BY created_at DESC;

@@ -1,25 +1,20 @@
-from dataclasses import dataclass
-from datetime import datetime, timezone
+from sqlalchemy import select, text
+from sqlalchemy.orm import Session
 
 # Adding ML model
 from pathlib import Path
 import joblib
 import pandas as pd
 
-@dataclass
-class PredictionRecord:
-    id: int
-    user_id: int
-    risk_label: str
-    risk_score: float
-    created_at: datetime
+from app.db.models import Prediction
+from app.db.sql_queries import get_sql_query
+
+PredictionRecord = Prediction
 
 
 class PredictionService:
     def __init__(self) -> None:
-        self._predictions_by_id: dict[int, PredictionRecord] = {}
-        self._next_id = 1
-        
+        # Load model artifacts once at startup to avoid reloading on each request.
         # Find the CarePortal project folder
         project_root = Path(__file__).resolve().parents[3]
 
@@ -38,6 +33,7 @@ class PredictionService:
 
     def predict(
         self,
+        db: Session,
         user_id: int,
         age: int,
         gender: str,
@@ -94,20 +90,19 @@ class PredictionService:
         score = float(self._model.predict_proba(patient_df)[0][1])
         label = "high_risk" if prediction == 1 else "low_risk"
 
-        record = PredictionRecord(
-            id=self._next_id,
+        record = Prediction(
             user_id=user_id,
             risk_label=label,
             risk_score=round(score, 3),
-            created_at=datetime.now(timezone.utc),
         )
-        self._predictions_by_id[record.id] = record
-        self._next_id += 1
+        db.add(record)
+        db.commit()
+        db.refresh(record)
         return record
 
-    def list_predictions(self, user_id: int) -> list[PredictionRecord]:
-        items = [p for p in self._predictions_by_id.values() if p.user_id == user_id]
-        return sorted(items, key=lambda x: x.created_at, reverse=True)
+    def list_predictions(self, db: Session, user_id: int) -> list[PredictionRecord]:
+        statement = select(Prediction).from_statement(text(get_sql_query("list_predictions_for_user")))
+        return list(db.scalars(statement, params={"user_id": user_id}).all())
 
 
 prediction_service = PredictionService()

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, get_db
 from app.schemas.appointment import (
     AppointmentCreateRequest,
     AppointmentResponse,
@@ -29,8 +30,10 @@ def _to_response(appointment: AppointmentRecord) -> AppointmentResponse:
 def create_appointment(
     payload: AppointmentCreateRequest,
     current_user: UserRecord = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ) -> AppointmentResponse:
     appointment = appointment_service.create_appointment(
+        db=db,
         user_id=current_user.id,
         provider_name=payload.provider_name,
         start_time=payload.start_time,
@@ -41,8 +44,11 @@ def create_appointment(
 
 
 @router.get("", response_model=list[AppointmentResponse])
-def list_appointments(current_user: UserRecord = Depends(get_current_user)) -> list[AppointmentResponse]:
-    appointments = appointment_service.list_appointments(current_user.id)
+def list_appointments(
+    current_user: UserRecord = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[AppointmentResponse]:
+    appointments = appointment_service.list_appointments(db, current_user.id)
     return [_to_response(item) for item in appointments]
 
 
@@ -51,8 +57,10 @@ def update_appointment(
     appointment_id: int,
     payload: AppointmentUpdateRequest,
     current_user: UserRecord = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ) -> AppointmentResponse:
     appointment = appointment_service.update_appointment(
+        db=db,
         user_id=current_user.id,
         appointment_id=appointment_id,
         provider_name=payload.provider_name,
@@ -68,8 +76,10 @@ def update_appointment(
 def cancel_appointment(
     appointment_id: int,
     current_user: UserRecord = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ) -> AppointmentResponse:
     appointment = appointment_service.cancel_appointment(
+        db=db,
         user_id=current_user.id,
         appointment_id=appointment_id,
     )

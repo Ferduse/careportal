@@ -5,6 +5,8 @@ from fastapi import FastAPI, Request
 
 from app.config import settings
 from app.core.errors import register_exception_handlers
+from app.db.sql_bootstrap import bootstrap_database_from_scripts
+from app.db.session import engine
 from app.routers.appointment import router as appointment_router
 from app.routers.auth import router as auth_router
 from app.routers.medical_history import router as medical_history_router
@@ -23,6 +25,12 @@ app.include_router(patient_router)
 app.include_router(appointment_router)
 app.include_router(medical_history_router)
 app.include_router(prediction_router)
+
+
+@app.on_event("startup")
+def create_tables() -> None:
+    # Initialize schema and optional seed data from SQL scripts.
+    bootstrap_database_from_scripts(engine)
 
 
 @app.middleware("http")
