@@ -13,8 +13,19 @@ from app.routers.medical_history import router as medical_history_router
 from app.routers.patient import router as patient_router
 from app.routers.prediction import router as prediction_router
 
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title=settings.app_name, version=settings.app_version, debug=settings.debug)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 logger = logging.getLogger("careportal.api")
 
 # Add global error handlers so all routes return errors in one format.
