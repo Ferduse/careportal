@@ -2,17 +2,41 @@ import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { FaArrowLeft, FaShieldAlt } from "react-icons/fa";
 import "./RiskHistory.css";
+import { apiGet } from "../../api/client";
 
 function RiskHistory() {
 
     const [results, setResults] = useState([]);
 
     useEffect(() => {
+        const loadHistory = async () => {
+            const accessToken = localStorage.getItem("access_token");
 
-        const savedResults =
-            JSON.parse(localStorage.getItem("riskResults")) || [];
+            if (!accessToken) {
+                return;
+            }
 
-        setResults(savedResults);
+            try {
+                const data = await apiGet("/api/v1/predictions", accessToken);
+                const mapped = data.map((item) => ({
+                    id: item.id,
+                    risk: item.risk_label === "high_risk" ? "High" : "Low",
+                    date: new Date(item.created_at).toLocaleDateString("en-US", {
+                        month: "long",
+                        day: "numeric",
+                        year: "numeric",
+                    }),
+                }));
+
+                setResults(mapped);
+                localStorage.setItem("riskResults", JSON.stringify(mapped));
+            } catch (_error) {
+                const savedResults = JSON.parse(localStorage.getItem("riskResults")) || [];
+                setResults(savedResults);
+            }
+        };
+
+        loadHistory();
 
     }, []);
 

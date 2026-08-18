@@ -2,6 +2,43 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Appointment.css";
 import { FaArrowLeft, FaCalendarAlt } from "react-icons/fa";
+import { apiPost } from "../../api/client";
+
+function to24HourTime(slot) {
+    const [time, period] = slot.split(" ");
+    const [hourRaw, minute] = time.split(":");
+    let hour = parseInt(hourRaw, 10);
+
+    if (period === "PM" && hour !== 12) {
+        hour += 12;
+    }
+
+    if (period === "AM" && hour === 12) {
+        hour = 0;
+    }
+
+    return `${String(hour).padStart(2, "0")}:${minute}:00`;
+}
+
+function formatTimeForUi(dateTime) {
+    return new Date(dateTime).toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+    });
+}
+
+function toUiAppointment(apiAppointment) {
+    const start = new Date(apiAppointment.start_time);
+    return {
+        id: apiAppointment.id,
+        doctor: apiAppointment.provider_name,
+        date: start.toISOString().slice(0, 10),
+        time: formatTimeForUi(apiAppointment.start_time),
+        reason: apiAppointment.reason,
+        status: apiAppointment.status,
+    };
+}
 
 function Appointment() {
     const navigate = useNavigate();
@@ -11,32 +48,49 @@ function Appointment() {
     const [time, setTime] = useState("");
     const [reason, setReason] = useState("");
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
-        const newAppointment = {
-            id: Date.now(),
-            doctor,
-            date,
-            time,
-            reason
-        };
+        const accessToken = localStorage.getItem("access_token");
 
-        // Get existing appointments
-        const existingAppointments =
-            JSON.parse(localStorage.getItem("appointments")) || [];
+        if (!accessToken) {
+            alert("Please log in first.");
+            navigate("/");
+            return;
+        }
 
-        // Add new appointment
-        existingAppointments.push(newAppointment);
+        try {
+            const startTime = `${date}T${to24HourTime(time)}`;
+            const endTime = new Date(
+                new Date(startTime).getTime() + 30 * 60 * 1000
+            ).toISOString();
 
-        // Save all appointments
-        localStorage.setItem(
-            "appointments",
-            JSON.stringify(existingAppointments)
-        );
+            const created = await apiPost(
+                "/api/v1/appointments",
+                {
+                    provider_name: doctor,
+                    start_time: new Date(startTime).toISOString(),
+                    end_time: endTime,
+                    reason,
+                },
+                accessToken
+            );
 
-        // Go to dashboard
-        navigate("/dashboard");
+            const existingAppointments =
+                JSON.parse(localStorage.getItem("appointments")) || [];
+
+            localStorage.setItem(
+                "appointments",
+                JSON.stringify([
+                    toUiAppointment(created),
+                    ...existingAppointments,
+                ])
+            );
+
+            navigate("/dashboard");
+        } catch (error) {
+            alert(error.message || "Unable to create appointment");
+        }
     };
 
     return (

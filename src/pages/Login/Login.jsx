@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 import Button from "../../components/Button/Button";
 import Input from "../../components/Input/Input";
+import { apiGet, apiPost } from "../../api/client";
 
 import { FaHeartbeat } from "react-icons/fa";
 
@@ -19,44 +20,39 @@ function Login(){
 
 
 
-  const handleLogin = (e)=>{
+  const handleLogin = async (e)=>{
 
     e.preventDefault();
 
 
-    const savedUser = JSON.parse(
-      localStorage.getItem("user")
-    );
+    try {
+      const tokenData = await apiPost("/api/v1/auth/login", {
+        email,
+        password,
+      });
 
+      localStorage.setItem("access_token", tokenData.access_token);
+      localStorage.setItem("refresh_token", tokenData.refresh_token);
 
-    if(!savedUser){
-
-      alert("No account found. Please register first.");
-
-      return;
-    }
-
-
-    if(
-      email === savedUser.email &&
-      password === savedUser.password
-    ){
+      const user = await apiGet("/api/v1/auth/me", tokenData.access_token);
+      const firstName = user.full_name.split(" ")[0] || user.full_name;
 
       localStorage.setItem(
-        "loggedInUser",
-        JSON.stringify(savedUser)
+        "user",
+        JSON.stringify({
+          id: user.id,
+          email: user.email,
+          full_name: user.full_name,
+          firstName,
+        })
       );
 
+      localStorage.setItem("isLoggedIn", "true");
 
-      alert("Login Successful!");
-
+      alert("Login successful!");
       navigate("/dashboard");
-
-
-    }else{
-
-      alert("Incorrect Email or Password");
-
+    } catch (error) {
+      alert(error.message || "Login failed");
     }
 
   };
@@ -130,7 +126,7 @@ onChange={(e)=>setPassword(e.target.value)}
 New Here?
 
 
-<Link to="/Register">
+<Link to="/register">
 
  Register
 

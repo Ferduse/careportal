@@ -1,6 +1,7 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import "./Dashboard.css";
+import { apiGet } from "../../api/client";
 
 import {
     FaHome,
@@ -42,39 +43,92 @@ function Dashboard() {
 
     // Load dashboard information
     useEffect(() => {
+        const loadDashboard = async () => {
+            const accessToken = localStorage.getItem("access_token");
 
-        // Load user information
-        const savedUser =
-            JSON.parse(localStorage.getItem("user"));
+            if (!accessToken) {
+                navigate("/");
+                return;
+            }
 
-        if (savedUser) {
-            setUser(savedUser);
-        }
+            try {
+                const me = await apiGet("/api/v1/auth/me", accessToken);
+                const firstName = me.full_name.split(" ")[0] || me.full_name;
 
+                const userSnapshot = {
+                    id: me.id,
+                    email: me.email,
+                    full_name: me.full_name,
+                    firstName,
+                };
 
-        // Load appointments
-        const savedAppointments =
-            JSON.parse(localStorage.getItem("appointments")) || [];
+                setUser(userSnapshot);
+                localStorage.setItem("user", JSON.stringify(userSnapshot));
 
-        setAppointments(savedAppointments);
+                const apiAppointments = await apiGet("/api/v1/appointments", accessToken);
+                const mappedAppointments = apiAppointments
+                    .filter((item) => item.status !== "canceled")
+                    .map((item) => {
+                        const start = new Date(item.start_time);
+                        return {
+                            id: item.id,
+                            doctor: item.provider_name,
+                            date: start.toISOString().slice(0, 10),
+                            time: start.toLocaleTimeString("en-US", {
+                                hour: "numeric",
+                                minute: "2-digit",
+                                hour12: true,
+                            }),
+                            reason: item.reason,
+                        };
+                    });
 
+                setAppointments(mappedAppointments);
+                localStorage.setItem("appointments", JSON.stringify(mappedAppointments));
 
-        // Load risk results
-        const savedRiskResults =
-            JSON.parse(localStorage.getItem("riskResults")) || [];
+                const predictionHistory = await apiGet("/api/v1/predictions", accessToken);
+                if (predictionHistory.length > 0) {
+                    const latest = predictionHistory[0];
+                    setLatestRisk({
+                        id: latest.id,
+                        risk: latest.risk_label === "high_risk" ? "High" : "Low",
+                        date: new Date(latest.created_at).toLocaleDateString("en-US", {
+                            month: "long",
+                            day: "numeric",
+                            year: "numeric",
+                        }),
+                    });
+                }
 
-        if (savedRiskResults.length > 0) {
-            setLatestRisk(savedRiskResults[0]);
-        }
+                const historyRecords = await apiGet("/api/v1/medical-history", accessToken);
+                const summary = {
+                    conditions: [],
+                    medications: [],
+                    allergies: [],
+                    surgeries: [],
+                    lastCheckup: localStorage.getItem("last_checkup") || "",
+                };
 
+                historyRecords.forEach((record) => {
+                    const type = ["conditions", "medications", "allergies", "surgeries"].includes(record.condition_name)
+                        ? record.condition_name
+                        : "conditions";
 
-        // Load medical history
-        const savedMedicalHistory =
-            JSON.parse(localStorage.getItem("medicalHistory"));
+                    summary[type].push({
+                        id: record.id,
+                        name: record.notes,
+                        dateAdded: record.created_at.slice(0, 10),
+                    });
+                });
 
-        if (savedMedicalHistory) {
-            setMedicalHistory(savedMedicalHistory);
-        }
+                setMedicalHistory(summary);
+                localStorage.setItem("medicalHistory", JSON.stringify(summary));
+            } catch (_error) {
+                navigate("/");
+            }
+        };
+
+        loadDashboard();
 
     }, []);
 
@@ -84,10 +138,9 @@ function Dashboard() {
 
         // Keep the user's account information saved
         // but mark the user as logged out
-        localStorage.setItem(
-            "isLoggedIn",
-            "false"
-        );
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+        localStorage.setItem("isLoggedIn", "false");
 
         navigate("/");
 

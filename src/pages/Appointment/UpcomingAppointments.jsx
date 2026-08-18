@@ -8,525 +8,336 @@ import {
     FaClock,
     FaUserMd,
     FaPlus,
-    FaEdit
+    FaEdit,
 } from "react-icons/fa";
+import { apiGet, apiPost, apiPut } from "../../api/client";
 
 const timeSlots = [];
 
 for (let hour = 8; hour <= 17; hour++) {
-
     for (let minute = 0; minute < 60; minute += 30) {
-
-        // Don't add times after 5:00 PM
         if (hour === 17 && minute > 0) {
             continue;
         }
 
         const hour12 = hour > 12 ? hour - 12 : hour;
         const period = hour >= 12 ? "PM" : "AM";
+        const formattedMinute = minute === 0 ? "00" : "30";
 
-        const formattedMinute =
-            minute === 0 ? "00" : "30";
-
-        timeSlots.push(
-            `${hour12}:${formattedMinute} ${period}`
-        );
+        timeSlots.push(`${hour12}:${formattedMinute} ${period}`);
     }
 }
 
+function to24HourTime(slot) {
+    const [time, period] = slot.split(" ");
+    const [hourRaw, minute] = time.split(":");
+    let hour = parseInt(hourRaw, 10);
+
+    if (period === "PM" && hour !== 12) {
+        hour += 12;
+    }
+
+    if (period === "AM" && hour === 12) {
+        hour = 0;
+    }
+
+    return `${String(hour).padStart(2, "0")}:${minute}:00`;
+}
+
+function toUiAppointment(apiAppointment) {
+    const start = new Date(apiAppointment.start_time);
+
+    return {
+        id: apiAppointment.id,
+        doctor: apiAppointment.provider_name,
+        date: start.toISOString().slice(0, 10),
+        time: start.toLocaleTimeString("en-US", {
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+        }),
+        reason: apiAppointment.reason,
+        status: apiAppointment.status,
+    };
+}
 
 function UpcomingAppointments() {
-
     const navigate = useNavigate();
 
     const [appointments, setAppointments] = useState([]);
-
-    // Appointment currently being edited
     const [editingAppointment, setEditingAppointment] = useState(null);
 
-
-    // Load appointments
     useEffect(() => {
-
         loadAppointments();
-
     }, []);
 
+    const loadAppointments = async () => {
+        const accessToken = localStorage.getItem("access_token");
 
-    const loadAppointments = () => {
+        if (!accessToken) {
+            navigate("/");
+            return;
+        }
 
-        const savedAppointments =
-            JSON.parse(localStorage.getItem("appointments")) || [];
-
-        setAppointments(savedAppointments);
-
+        try {
+            const items = await apiGet("/api/v1/appointments", accessToken);
+            const mapped = items.map(toUiAppointment);
+            setAppointments(mapped);
+            localStorage.setItem("appointments", JSON.stringify(mapped));
+        } catch (error) {
+            alert(error.message || "Unable to load appointments");
+        }
     };
 
-
-    // Today's date
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-
-    // Upcoming appointments
     const upcomingAppointments = appointments
         .filter((appointment) => {
+            if (appointment.status === "canceled") {
+                return false;
+            }
 
-            const appointmentDate =
-                new Date(appointment.date + "T00:00:00");
-
+            const appointmentDate = new Date(`${appointment.date}T00:00:00`);
             return appointmentDate >= today;
-
         })
-        .sort((a, b) => {
+        .sort((a, b) => new Date(a.date) - new Date(b.date));
 
-            return new Date(a.date) - new Date(b.date);
-
-        });
-
-
-    // Past appointments
     const pastAppointments = appointments
         .filter((appointment) => {
+            if (appointment.status === "canceled") {
+                return false;
+            }
 
-            const appointmentDate =
-                new Date(appointment.date + "T00:00:00");
-
+            const appointmentDate = new Date(`${appointment.date}T00:00:00`);
             return appointmentDate < today;
-
         })
-        .sort((a, b) => {
+        .sort((a, b) => new Date(b.date) - new Date(a.date));
 
-            return new Date(b.date) - new Date(a.date);
+    const cancelAppointment = async (id) => {
+        const accessToken = localStorage.getItem("access_token");
 
-        });
+        if (!accessToken) {
+            navigate("/");
+            return;
+        }
 
-
-    // Cancel appointment
-    const cancelAppointment = (id) => {
-
-        const updatedAppointments =
-            appointments.filter(
-                (appointment) => appointment.id !== id
-            );
-
-        localStorage.setItem(
-            "appointments",
-            JSON.stringify(updatedAppointments)
-        );
-
-        setAppointments(updatedAppointments);
-
+        try {
+            await apiPost(`/api/v1/appointments/${id}/cancel`, {}, accessToken);
+            await loadAppointments();
+        } catch (error) {
+            alert(error.message || "Unable to cancel appointment");
+        }
     };
 
-
-    // Start editing
     const startEditing = (appointment) => {
-
-        setEditingAppointment({
-            ...appointment
-        });
-
+        setEditingAppointment({ ...appointment });
     };
 
-
-    // Handle edit form changes
     const handleEditChange = (e) => {
-
         const { name, value } = e.target;
 
         setEditingAppointment((previous) => ({
             ...previous,
-            [name]: value
+            [name]: value,
         }));
-
     };
 
-
-    // Save edited appointment
-    const saveEditedAppointment = (e) => {
-
+    const saveEditedAppointment = async (e) => {
         e.preventDefault();
 
-        const updatedAppointments = appointments.map(
-            (appointment) => {
+        const accessToken = localStorage.getItem("access_token");
 
-                if (appointment.id === editingAppointment.id) {
+        if (!accessToken) {
+            navigate("/");
+            return;
+        }
 
-                    return editingAppointment;
+        try {
+            const startTime = `${editingAppointment.date}T${to24HourTime(editingAppointment.time)}`;
+            const endTime = new Date(
+                new Date(startTime).getTime() + 30 * 60 * 1000
+            ).toISOString();
 
-                }
+            await apiPut(
+                `/api/v1/appointments/${editingAppointment.id}`,
+                {
+                    provider_name: editingAppointment.doctor,
+                    start_time: new Date(startTime).toISOString(),
+                    end_time: endTime,
+                    reason: editingAppointment.reason,
+                    status: "scheduled",
+                },
+                accessToken
+            );
 
-                return appointment;
-
-            }
-        );
-
-
-        localStorage.setItem(
-            "appointments",
-            JSON.stringify(updatedAppointments)
-        );
-
-        setAppointments(updatedAppointments);
-
-        // Close edit form
-        setEditingAppointment(null);
-
+            setEditingAppointment(null);
+            await loadAppointments();
+        } catch (error) {
+            alert(error.message || "Unable to save appointment changes");
+        }
     };
 
-
-    // Cancel editing
     const cancelEditing = () => {
-
         setEditingAppointment(null);
-
     };
-
 
     return (
-
         <div className="appointments-page">
-
-
-            {/* Header */}
-
             <div className="appointments-header">
-
                 <div className="header-left">
-
                     <FaArrowLeft
                         className="back-icon"
                         onClick={() => navigate("/dashboard")}
                     />
 
-                    <h2>
-                        Upcoming Appointments
-                    </h2>
-
+                    <h2>Upcoming Appointments</h2>
                 </div>
-
             </div>
 
-
-
-            {/* Main Content */}
-
             <div className="appointments-content">
-
-
-                {/* Upcoming Appointments */}
-
                 <section className="appointment-section">
-
                     <div className="section-title">
-
                         <FaCalendarAlt />
-
-                        <h3>
-                            Upcoming Appointments
-                        </h3>
-
+                        <h3>Upcoming Appointments</h3>
                     </div>
 
-
                     {upcomingAppointments.length > 0 ? (
-
                         <div className="appointments-list">
-
-                            {upcomingAppointments.map(
-                                (appointment) => (
-
-                                    <div
-                                        className="appointment-item"
-                                        key={appointment.id}
-                                    >
-
-                                        <div className="appointment-icon">
-
-                                            <FaUserMd />
-
-                                        </div>
-
-
-                                        <div className="appointment-info">
-
-                                            <h4>
-                                                {appointment.doctor}
-                                            </h4>
-
-
-                                            <p>
-
-                                                <FaCalendarAlt />
-
-                                                {formatDate(
-                                                    appointment.date
-                                                )}
-
-                                            </p>
-
-
-                                            <p>
-
-                                                <FaClock />
-
-                                                {appointment.time}
-
-                                            </p>
-
-
-                                            <p>
-
-                                                <strong>
-                                                    Reason:
-                                                </strong>{" "}
-
-                                                {appointment.reason}
-
-                                            </p>
-
-                                        </div>
-
-
-                                        {/* Buttons */}
-
-                                        <div className="appointment-actions">
-
-                                            <button
-                                                className="edit-appointment-btn"
-                                                onClick={() =>
-                                                    startEditing(
-                                                        appointment
-                                                    )
-                                                }
-                                            >
-
-                                                <FaEdit />
-
-                                                Edit
-
-                                            </button>
-
-
-                                            <button
-                                                className="cancel-appointment-btn"
-                                                onClick={() =>
-                                                    cancelAppointment(
-                                                        appointment.id
-                                                    )
-                                                }
-                                            >
-                                                Cancel
-                                            </button>
-
-                                        </div>
-
+                            {upcomingAppointments.map((appointment) => (
+                                <div className="appointment-item" key={appointment.id}>
+                                    <div className="appointment-icon">
+                                        <FaUserMd />
                                     </div>
 
-                                )
-                            )}
+                                    <div className="appointment-info">
+                                        <h4>{appointment.doctor}</h4>
 
+                                        <p>
+                                            <FaCalendarAlt />
+                                            {formatDate(appointment.date)}
+                                        </p>
+
+                                        <p>
+                                            <FaClock />
+                                            {appointment.time}
+                                        </p>
+
+                                        <p>
+                                            <strong>Reason:</strong> {appointment.reason}
+                                        </p>
+                                    </div>
+
+                                    <div className="appointment-actions">
+                                        <button
+                                            className="edit-appointment-btn"
+                                            onClick={() => startEditing(appointment)}
+                                        >
+                                            <FaEdit />
+                                            Edit
+                                        </button>
+
+                                        <button
+                                            className="cancel-appointment-btn"
+                                            onClick={() => cancelAppointment(appointment.id)}
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-
                     ) : (
-
                         <div className="no-appointments">
-
-                            <p>
-                                You don't have any upcoming
-                                appointments.
-                            </p>
+                            <p>You don't have any upcoming appointments.</p>
 
                             <button
                                 className="new-appointment-btn"
-                                onClick={() =>
-                                    navigate("/appointments")
-                                }
+                                onClick={() => navigate("/appointments")}
                             >
-
                                 <FaPlus />
-
                                 Book Appointment
-
                             </button>
-
                         </div>
-
                     )}
-
                 </section>
-
-
-
-                {/* Past Appointments */}
 
                 <section className="appointment-section">
-
                     <div className="section-title">
-
                         <FaCalendarAlt />
-
-                        <h3>
-                            Past Appointments
-                        </h3>
-
+                        <h3>Past Appointments</h3>
                     </div>
 
-
                     {pastAppointments.length > 0 ? (
-
                         <div className="appointments-list">
-
-                            {pastAppointments.map(
-                                (appointment) => (
-
-                                    <div
-                                        className="appointment-item past"
-                                        key={appointment.id}
-                                    >
-
-                                        <div className="appointment-icon">
-
-                                            <FaUserMd />
-
-                                        </div>
-
-
-                                        <div className="appointment-info">
-
-                                            <h4>
-                                                {appointment.doctor}
-                                            </h4>
-
-
-                                            <p>
-
-                                                <FaCalendarAlt />
-
-                                                {formatDate(
-                                                    appointment.date
-                                                )}
-
-                                            </p>
-
-
-                                            <p>
-
-                                                <FaClock />
-
-                                                {appointment.time}
-
-                                            </p>
-
-
-                                            <p>
-
-                                                <strong>
-                                                    Reason:
-                                                </strong>{" "}
-
-                                                {appointment.reason}
-
-                                            </p>
-
-                                        </div>
-
-
-                                        <span className="past-label">
-                                            Completed
-                                        </span>
-
+                            {pastAppointments.map((appointment) => (
+                                <div className="appointment-item past" key={appointment.id}>
+                                    <div className="appointment-icon">
+                                        <FaUserMd />
                                     </div>
 
-                                )
-                            )}
+                                    <div className="appointment-info">
+                                        <h4>{appointment.doctor}</h4>
 
+                                        <p>
+                                            <FaCalendarAlt />
+                                            {formatDate(appointment.date)}
+                                        </p>
+
+                                        <p>
+                                            <FaClock />
+                                            {appointment.time}
+                                        </p>
+
+                                        <p>
+                                            <strong>Reason:</strong> {appointment.reason}
+                                        </p>
+                                    </div>
+
+                                    <span className="past-label">Completed</span>
+                                </div>
+                            ))}
                         </div>
-
                     ) : (
-
                         <div className="no-appointments">
-
-                            <p>
-                                No past appointments.
-                            </p>
-
+                            <p>No past appointments.</p>
                         </div>
-
                     )}
-
                 </section>
-
             </div>
 
-
-
-            {/* EDIT APPOINTMENT MODAL */}
-
             {editingAppointment && (
-
                 <div className="edit-modal-overlay">
-
                     <div className="edit-modal">
-
-                        <h3>
-                            Edit Appointment
-                        </h3>
-
+                        <h3>Edit Appointment</h3>
 
                         <form onSubmit={saveEditedAppointment}>
-
-
-                            {/* Doctor */}
-
                             <div className="form-group">
-
-                                <label>
-                                    Doctor
-                                </label>
+                                <label>Doctor</label>
 
                                 <input
                                     type="text"
                                     name="doctor"
-                                    value={
-                                        editingAppointment.doctor
-                                    }
+                                    value={editingAppointment.doctor}
                                     onChange={handleEditChange}
                                     required
                                 />
-
                             </div>
 
-
-                            {/* Date */}
-
                             <div className="form-group">
-
-                                <label>
-                                    Date
-                                </label>
+                                <label>Date</label>
 
                                 <input
                                     type="date"
                                     name="date"
-                                    value={
-                                        editingAppointment.date
-                                    }
+                                    value={editingAppointment.date}
                                     onChange={handleEditChange}
                                     required
                                 />
-
                             </div>
 
-
-                            {/* Time */}
-
                             <div className="form-group">
-
-                                <label>
-                                    Time
-                                </label>
+                                <label>Time</label>
 
                                 <select
                                     name="time"
@@ -534,47 +345,28 @@ function UpcomingAppointments() {
                                     onChange={handleEditChange}
                                     required
                                 >
-                                    <option value="">
-                                        Select a time
-                                    </option>
+                                    <option value="">Select a time</option>
 
                                     {timeSlots.map((time) => (
-                                        <option
-                                            key={time}
-                                            value={time}
-                                        >
+                                        <option key={time} value={time}>
                                             {time}
                                         </option>
                                     ))}
                                 </select>
-
                             </div>
 
-
-                            {/* Reason */}
-
                             <div className="form-group">
-
-                                <label>
-                                    Reason for Appointment
-                                </label>
+                                <label>Reason for Appointment</label>
 
                                 <textarea
                                     name="reason"
-                                    value={
-                                        editingAppointment.reason
-                                    }
+                                    value={editingAppointment.reason}
                                     onChange={handleEditChange}
                                     required
                                 />
-
                             </div>
 
-
-                            {/* Modal Buttons */}
-
                             <div className="edit-modal-actions">
-
                                 <button
                                     type="button"
                                     className="close-edit-btn"
@@ -583,44 +375,26 @@ function UpcomingAppointments() {
                                     Cancel
                                 </button>
 
-
-                                <button
-                                    type="submit"
-                                    className="save-edit-btn"
-                                >
+                                <button type="submit" className="save-edit-btn">
                                     Save Changes
                                 </button>
-
                             </div>
-
                         </form>
-
                     </div>
-
                 </div>
-
             )}
-
         </div>
-
     );
 }
 
-
-// Format date
 function formatDate(dateString) {
-
-    const date = new Date(
-        dateString + "T00:00:00"
-    );
+    const date = new Date(`${dateString}T00:00:00`);
 
     return date.toLocaleDateString("en-US", {
         month: "long",
         day: "numeric",
-        year: "numeric"
+        year: "numeric",
     });
-
 }
-
 
 export default UpcomingAppointments;

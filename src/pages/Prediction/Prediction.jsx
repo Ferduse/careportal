@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Prediction.css";
 import { FaArrowLeft } from "react-icons/fa";
+import { apiPost } from "../../api/client";
 
 
 const Prediction = () => {
@@ -67,25 +68,11 @@ const Prediction = () => {
 
     try {
       // Send request to FastAPI
-      const response = await fetch(
-        "http://127.0.0.1:8000/api/v1/predictions",
-        {
-          method: "POST",
-          // Sending data as JSON and sends access token to FastAPI
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify(payload), // convert from JS to JSON
-        }
+      const data = await apiPost(
+        "/api/v1/predictions",
+        payload,
+        accessToken
       );
-
-      if (!response.ok) {
-        throw new Error("Prediction request failed");
-      }
-
-      // Convert the FastAPI response from JSON to JS
-      const data = await response.json();
 
       // Convert backend label for the UI 
       const riskLevel =

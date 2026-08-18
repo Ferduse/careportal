@@ -1,5 +1,60 @@
 # CarePortal
 
+## Local Setup and Run
+
+Use two terminals: one for backend, one for frontend.
+
+### Backend API (Terminal 1)
+
+1. Go to backend folder:
+
+      cd backend
+
+2. Create and activate virtual environment:
+
+      python3 -m venv .venv
+      source .venv/bin/activate
+
+3. Install dependencies:
+
+      pip install -r requirements.txt
+
+4. Create environment file:
+
+      cp .env.example .env
+
+5. Start API server:
+
+      uvicorn app.main:app --reload
+
+API docs: http://127.0.0.1:8000/docs
+
+### Frontend UI (Terminal 2)
+
+1. Go to project root:
+
+      cd ..
+
+2. Install dependencies:
+
+      npm install
+
+3. Start UI:
+
+      npm start
+
+UI: http://127.0.0.1:3000
+
+### Quick Verification
+
+After starting backend:
+
+curl http://127.0.0.1:8000/health
+
+Expected response:
+
+{"status":"ok"}
+
 ## Product Vision
 
 For patients who want a simpler way to manage their healthcare information and understand potential health risks, CarePortal is a web-based healthcare platform that allows users to register, manage appointments, maintain a basic medical history, and receive a machine-learning-based diabetes risk prediction.

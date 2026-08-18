@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 import Button from "../../components/Button/Button";
 import Input from "../../components/Input/Input";
+import { apiPost } from "../../api/client";
 
 
 function Register() {
@@ -21,31 +22,42 @@ function Register() {
   const [password, setPassword] = useState("");
 
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
 
+    const full_name = `${firstName} ${lastName}`.trim();
 
-    const user = {
-      firstName,
-      lastName,
-      address,
-      dob,
-      gender,
-      email,
-      phone,
-      password
-    };
+    if (!full_name) {
+      alert("Please enter your name.");
+      return;
+    }
 
+    try {
+      await apiPost("/api/v1/auth/register", {
+        full_name,
+        email,
+        password,
+      });
 
-    localStorage.setItem(
-      "user",
-      JSON.stringify(user)
-    );
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          firstName,
+          lastName,
+          address,
+          dob,
+          gender,
+          email,
+          phone,
+          full_name,
+        })
+      );
 
-
-    alert("Account Created Successfully!");
-
-    navigate("/");
+      alert("Account created successfully. Please log in.");
+      navigate("/");
+    } catch (error) {
+      alert(error.message || "Registration failed");
+    }
   };
 
 
