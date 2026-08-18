@@ -117,3 +117,16 @@ The model uses patient information such as:
 - Hypertension
 - Heart-disease status
 - Smoking history
+
+---
+
+## Frontend (UI) Quick Start
+
+The UI app from the `UI` branch is a Create React App project.
+
+In the project root, you can run:
+
+- `npm install`
+- `npm start`
+- `npm test`
+- `npm run build`

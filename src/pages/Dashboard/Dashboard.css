@@ -1,0 +1,314 @@
+.dashboard-container {
+    display: flex;
+    min-height: 100vh;
+    background: #f8fafc;
+}
+.dashboard-link {
+    color: #4f8dfd;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.dashboard-link:hover {
+    text-decoration: underline;
+}
+
+
+/* Sidebar */
+
+.sidebar {
+    width: 220px;
+    background: white;
+    border-right: 1px solid #ddd;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 20px 12px;
+}
+
+
+.side-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    margin: 6px 0;
+    border-radius: 12px;
+    text-decoration: none;
+    color: #5a5a5a;
+    transition: all 0.25s ease;
+}
+
+
+.side-item svg {
+    font-size: 22px;
+    min-width: 22px;
+}
+
+
+.side-item:hover {
+    background: #eaf4ff;
+    color: #4f8dfd;
+    transform: translateX(4px);
+}
+
+
+.side-item.active {
+    background: #4f8dfd;
+    color: white;
+    box-shadow: 0 8px 18px rgba(79,141,253,0.3);
+}
+
+
+.side-item.active svg {
+    color:white;
+}
+
+
+.settings {
+    margin-top:auto;
+    margin-bottom:20px;
+}
+
+
+
+/* Main */
+
+.main-content {
+    flex:1;
+    overflow-x:hidden;
+}
+
+/* Navbar */
+
+.top-navbar {
+    height: 70px;
+    background: white;
+    border-bottom: 1px solid #ddd;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+   
+    padding: 0 30px;
+}
+
+
+.welcome-message {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+}
+
+
+/* Body */
+
+.dashboard-body {
+
+    padding:25px;
+
+}
+
+/* Cards Container */
+
+.cards-container {
+
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+    gap:20px;
+    margin-top:20px;
+
+}
+
+
+
+/* Cards */
+
+.dashboard-card {
+
+    background:white;
+    border:1px solid #ddd;
+    border-radius:14px;
+    padding:20px;
+    display:flex;
+    align-items:center;
+    gap:20px;
+    box-shadow:0 3px 8px rgba(0,0,0,.08);
+    transition:.25s;
+}
+
+
+.dashboard-card:hover {
+
+    transform:translateY(-0.5px);
+
+}
+
+
+.dashboard-card h3 {
+    margin:0 0 12px;
+}
+
+
+/* Icons within the cards */
+
+.card-icon {
+    width:45px;
+    height:45px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:12px;
+    background:#eaf4ff;
+    color:#4f8dfd;
+
+}
+
+
+/* Appointment content takes up remaining card space */
+
+.appointment-card-content {
+    flex: 1;
+    min-width: 0;
+}
+
+
+/* Upcoming Appointments header */
+
+.appointment-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+
+.appointment-header h3 {
+    margin: 0;
+
+    font-size: 20px;
+    font-weight: 600;
+
+    color: #1f2937;
+}
+
+
+.appointment-header a {
+    color: #4f8dfd;
+    text-decoration: none;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    white-space: nowrap;
+}
+
+
+.appointment-header a:hover {
+    text-decoration: underline;
+}
+
+
+/* Individual upcoming appointments */
+
+.upcoming-appointment {
+    padding: 12px 0;
+
+    border-bottom: 1px solid #e5e7eb;
+}
+
+
+.upcoming-appointment:last-child {
+    border-bottom: none;
+}
+
+
+.upcoming-appointment p {
+    margin: 5px 0;
+
+    color: #6b7280;
+
+    font-size: 15px;
+}
+
+
+.upcoming-appointment p:first-child {
+    color: #1f2937;
+
+    font-size: 16px;
+}
+
+
+
+.risk {
+
+    background:#ddd;
+
+    padding:5px 12px;
+
+    border-radius:6px;
+
+    margin-left:10px;
+
+    font-weight:bold;
+
+}
+
+
+
+.number,
+.date {
+
+    margin-left:auto;
+
+    font-weight:bold;
+
+}
+
+
+
+/* Mobile */
+
+@media(max-width:768px){
+
+    .sidebar{
+
+        width:70px;
+
+        padding:15px 8px;
+
+    }
+
+
+    .side-item span{
+
+        display:none;
+
+    }
+
+
+    .dashboard-body{
+
+        padding:15px;
+
+    }
+
+}
+
+/* Logout button */
+.logout-side-item {
+    margin-top: auto;
+    width: 100%;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    cursor: pointer;
+    text-align: center;
+}
+
+.logout-side-item:hover {
+    background: #ffecec;
+    color: #e74c3c;
+}
