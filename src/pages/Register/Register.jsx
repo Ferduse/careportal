@@ -25,17 +25,20 @@ function Register() {
   const handleRegister = async (e) => {
     e.preventDefault();
 
-    const full_name = `${firstName} ${lastName}`.trim();
+    const normalizedEmail = email.trim().toLowerCase();
 
-    if (!full_name) {
-      alert("Please enter your name.");
+    if (!normalizedEmail.includes("@")) {
+      alert("Please enter a valid email address (example: name@email.com).");
       return;
     }
+
+    const emailPrefix = normalizedEmail.split("@")[0] || "careportal-user";
+    const full_name = `${firstName} ${lastName}`.trim() || emailPrefix;
 
     try {
       await apiPost("/api/v1/auth/register", {
         full_name,
-        email,
+          email: normalizedEmail,
         password,
       });
 
@@ -47,7 +50,7 @@ function Register() {
           address,
           dob,
           gender,
-          email,
+          email: normalizedEmail,
           phone,
           full_name,
         })

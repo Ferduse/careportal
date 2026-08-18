@@ -20,10 +20,28 @@ async function parseResponse(response) {
 
   if (!response.ok) {
     const detail = payload?.detail;
-    const message =
-      typeof detail === "string"
-        ? detail
-        : detail?.message || "Request failed";
+    const errorDetail = payload?.error?.details;
+    const errorMessage = payload?.error?.message;
+    let message = "Request failed";
+
+    if (typeof detail === "string") {
+      message = detail;
+    } else if (Array.isArray(detail) && detail.length > 0) {
+      const firstError = detail[0];
+      if (typeof firstError?.msg === "string") {
+        message = firstError.msg;
+      }
+    } else if (typeof detail?.message === "string") {
+      message = detail.message;
+    } else if (Array.isArray(errorDetail) && errorDetail.length > 0) {
+      const firstError = errorDetail[0];
+      if (typeof firstError?.msg === "string") {
+        message = firstError.msg;
+      }
+    } else if (typeof errorMessage === "string") {
+      message = errorMessage;
+    }
+
     throw new Error(message);
   }
 

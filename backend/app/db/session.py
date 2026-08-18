@@ -1,7 +1,24 @@
+from pathlib import Path
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.config import settings
+
+
+def _prepare_sqlite_path(database_url: str) -> None:
+    sqlite_prefix = "sqlite:///"
+    if not database_url.startswith(sqlite_prefix):
+        return
+
+    raw_target = database_url[len(sqlite_prefix) :].split("?", 1)[0]
+    if raw_target in ("", ":memory:"):
+        return
+
+    Path(raw_target).expanduser().resolve().parent.mkdir(parents=True, exist_ok=True)
+
+
+_prepare_sqlite_path(settings.database_url)
 
 
 # SQLite requires this flag to allow DB access from multiple FastAPI threads.
